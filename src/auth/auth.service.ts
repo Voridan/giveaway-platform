@@ -8,17 +8,15 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { PasswordService } from '../users/pasword.service';
 import { LoginUserDto } from '../users/dto/login-user.dto';
 import { randomBytes } from 'crypto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/entities/user.entity';
-import { Repository } from 'typeorm';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UserTypeOrmRepository } from 'src/repository/user.typeorm-repository';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly passwordService: PasswordService,
-    @InjectRepository(User) private readonly usersRepo: Repository<User>,
+    private readonly usersRepo: UserTypeOrmRepository,
   ) {}
 
   async signup(createUser: CreateUserDto) {
@@ -71,15 +69,13 @@ export class AuthService {
     const FIVE_MINS = 5 * 60 * 1000;
 
     user.resetPasswordExpires = new Date(Date.now() + FIVE_MINS);
-    await this.usersService.update(user.userId, user);
+    await this.usersService.update(user.id, user);
 
     return secret;
   }
 
   async resetPassword(id: number, resetPasswordDto: ResetPasswordDto) {
-    const user = await this.usersRepo.findOne({
-      where: { userId: id },
-    });
+    const user = await this.usersRepo.findOne({ id });
 
     if (!user) {
       throw new NotFoundException('user not found');

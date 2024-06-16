@@ -1,72 +1,45 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Giveaway } from 'src/entities/giveaway.entity';
-import { Repository } from 'typeorm';
 import { CreateGiveawayDto } from './dto/create-giveaway.dto';
-import { User } from 'src/entities/user.entity';
+import { User } from '@app/common/database/typeorm/entities/user.entity';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
-import { Participant } from 'src/entities/participant.entity';
 import { GiveawayResultDto } from './dto/giveaway-result.dto';
+import { GiveawayTypeOrmRepository } from 'src/repository/giveaway.typeorm-repository';
+import { Giveaway } from '@app/common';
 
 @Injectable()
 export class GiveawaysService {
-  constructor(
-    @InjectRepository(Giveaway)
-    private readonly giveawayRepo: Repository<Giveaway>,
-    @InjectRepository(Participant)
-    private readonly participantsRepo: Repository<Participant>,
-  ) {}
+  constructor(private readonly giveawayRepo: GiveawayTypeOrmRepository) {}
 
   async create(giveawayDto: CreateGiveawayDto, user: User) {
-    const giveaway = this.giveawayRepo.create(giveawayDto);
+    const giveaway = new Giveaway(giveawayDto);
     giveaway.owner = user;
-    return this.giveawayRepo.save(giveaway);
+    return this.giveawayRepo.create(giveaway);
   }
 
   async moderate(id: number, onModeration: boolean) {
-    const giveaway = await this.giveawayRepo.findOne({
-      where: { giveawayId: id },
-    });
-    if (!giveaway) {
-      throw new NotFoundException('Giveaway not found');
-    }
-
-    giveaway.onModeration = onModeration;
-    return this.giveawayRepo.save(giveaway);
+    return this.giveawayRepo.findOneAndUpdate({ id }, { onModeration });
   }
 
   findById(id: number) {
-    return this.giveawayRepo.findOne({ where: { giveawayId: id } });
+    return this.giveawayRepo.findOne({ id });
   }
 
   async update(id: number, body: UpdateGiveawayDto) {
-    const giveaway = await this.findById(id);
-    if (!giveaway) {
-      throw new NotFoundException('User not found.');
-    }
-
-    Object.assign(giveaway, body);
-    return this.giveawayRepo.save(giveaway);
+    return this.giveawayRepo.findOneAndUpdate({ id }, body);
   }
 
   async remove(id: number) {
-    const giveaway = await this.findById(id);
-    if (!giveaway) {
-      throw new NotFoundException('User not found.');
-    }
-
-    return this.giveawayRepo.remove(giveaway);
+    return this.giveawayRepo.findOneAndDelete({ id });
   }
 
   async getResult(id: number) {
-    const giveaway = await this.giveawayRepo.findOne({
-      where: { giveawayId: id },
-      relations: ['participants', 'winner'],
-    });
-
-    if (!giveaway) {
-      throw new NotFoundException('User not found.');
-    }
+    const giveaway = await this.giveawayRepo.findOne(
+      { id },
+      {
+        participants: true,
+        winner: true,
+      },
+    );
 
     const results = new GiveawayResultDto();
     results.participants = giveaway.participants.map((p) => p.nickname);

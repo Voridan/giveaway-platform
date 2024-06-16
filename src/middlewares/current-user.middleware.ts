@@ -1,13 +1,13 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { UsersService } from '../users.service';
+import { UsersService } from '../users/users.service';
 import { Request, Response } from 'express';
-import { User } from 'src/entities/user.entity';
+import { IUser } from '@app/common/interface/user.interface';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
-      currentUser?: User;
+      currentUser?: IUser;
     }
   }
 }

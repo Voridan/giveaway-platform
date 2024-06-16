@@ -1,3 +1,4 @@
+import { IGiveaway } from '@app/common/interface/giveaway.interface';
 import { Participant } from './participant.entity';
 import { User } from './user.entity';
 import {
@@ -6,14 +7,11 @@ import {
   Entity,
   ManyToOne,
   OneToMany,
-  PrimaryGeneratedColumn,
 } from 'typeorm';
+import { AbstractEntity } from './abstract.entity';
 
 @Entity()
-export class Giveaway {
-  @PrimaryGeneratedColumn()
-  giveawayId: number;
-
+export class Giveaway extends AbstractEntity<Giveaway> implements IGiveaway {
   @Column()
   title: string;
 

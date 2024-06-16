@@ -2,9 +2,13 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { AbstractDocument } from '../abstract.document';
 import { SchemaTypes } from 'mongoose';
 import { UserDocument } from './user.entity';
+import { IGiveaway } from '@app/common/interface/giveaway.interface';
 
 @Schema({ versionKey: false, timestamps: { createdAt: true, updatedAt: true } })
-export class GiveawayDocument extends AbstractDocument {
+export class GiveawayDocument
+  extends AbstractDocument
+  implements Omit<IGiveaway, 'id' | 'createdAt'>
+{
   @Prop({ required: true })
   title: string;
 

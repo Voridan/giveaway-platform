@@ -1,4 +1,5 @@
-import { Giveaway } from 'src/entities/giveaway.entity';
+import { IUser } from '@app/common/interface/user.interface';
+import { Giveaway } from './giveaway.entity';
 import {
   AfterInsert,
   Column,
@@ -7,14 +8,11 @@ import {
   JoinTable,
   ManyToMany,
   OneToMany,
-  PrimaryGeneratedColumn,
 } from 'typeorm';
+import { AbstractEntity } from './abstract.entity';
 
 @Entity()
-export class User {
-  @PrimaryGeneratedColumn()
-  userId: number;
-
+export class User extends AbstractEntity<User> implements IUser {
   @Column()
   userName: string;
 
@@ -45,7 +43,7 @@ export class User {
 
   @AfterInsert()
   logInsert() {
-    console.log(`Inserted user with id: ${this.userId}`);
+    console.log(`Inserted user with id: ${this.id}`);
   }
 
   validatePasswordReset(token: string): boolean {

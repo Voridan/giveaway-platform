@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { GiveawaysController } from './giveaways.controller';
 import { GiveawaysService } from './giveaways.service';
-import { Giveaway } from '../entities/giveaway.entity';
+import { Giveaway } from '@app/common/database/typeorm/entities/giveaway.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Participant } from 'src/entities/participant.entity';
+import { GiveawayTypeOrmRepository } from 'src/repository/giveaway.typeorm-repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Giveaway, Participant])],
+  imports: [TypeOrmModule.forFeature([Giveaway])],
   controllers: [GiveawaysController],
-  providers: [GiveawaysService],
+  providers: [GiveawaysService, GiveawayTypeOrmRepository],
 })
 export class GiveawaysModule {}

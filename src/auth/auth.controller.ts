@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Param,
   Post,
   Query,
   Session,
@@ -14,12 +13,11 @@ import { AuthService } from './auth.service';
 import { UserDto } from 'src/users/dto/user.dto';
 import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { AuthGuard } from 'src/guards/auth.guard';
-import { CurrentUser } from 'src/users/decorators/current-user.decorator';
-import { User } from 'src/entities/user.entity';
+import { CurrentUser } from 'src/decorators/current-user.decorator';
+import { User } from '@app/common/database/typeorm/entities/user.entity';
 import { MailService } from 'src/mail/mail.service';
 import { getResetPasswordEmailHtml } from './util/get-reset-password-email';
 import { Email } from 'src/mail/types/email';
-import e from 'express';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
@@ -46,7 +44,7 @@ export class AuthController {
       body.isAdmin = true;
 
     const user = await this.authService.signup(body);
-    session.userId = user.userId;
+    session.userId = user.id;
     return user;
   }
 
@@ -54,7 +52,7 @@ export class AuthController {
   @Serialize(UserDto)
   async loginUser(@Body() body: LoginUserDto, @Session() session: any) {
     const user = await this.authService.login(body);
-    session.userId = user.userId;
+    session.userId = user.id;
     return user;
   }
 
@@ -84,6 +82,6 @@ export class AuthController {
     @CurrentUser() user: User,
     @Body() resetPasswordDto: ResetPasswordDto,
   ) {
-    return this.authService.resetPassword(user.userId, resetPasswordDto);
+    return this.authService.resetPassword(user.id, resetPasswordDto);
   }
 }

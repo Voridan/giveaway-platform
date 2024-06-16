@@ -1,50 +1,35 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Injectable } from '@nestjs/common';
+import { User } from '@app/common/database/typeorm/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserTypeOrmRepository } from 'src/repository/user.typeorm-repository';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(User) private readonly repo: Repository<User>,
-  ) {}
+  constructor(private readonly repo: UserTypeOrmRepository) {}
 
   create(newUser: CreateUserDto) {
-    const user = this.repo.create(newUser);
-
-    return this.repo.save(user);
+    const user = new User(newUser);
+    return this.repo.create(user);
   }
 
-  findById(userId: number) {
-    return this.repo.findOne({ where: { userId } });
+  findById(id: number) {
+    return this.repo.findOne({ id });
   }
 
   findByEmail(email: string) {
-    return this.repo.findOne({ where: { email } });
+    return this.repo.findOne({ email });
   }
 
   findAll() {
     //! to make pagination (on last item id)
-    return this.repo.find();
+    return this.repo.find({});
   }
 
   async update(id: number, attrs: Partial<User>) {
-    const user = await this.findById(id);
-    if (!user) {
-      throw new NotFoundException('User not found.');
-    }
-
-    Object.assign(user, attrs);
-    return this.repo.save(user);
+    return this.repo.findOneAndUpdate({ id }, attrs);
   }
 
   async remove(id: number) {
-    const user = await this.findById(id);
-    if (!user) {
-      throw new NotFoundException('User not found.');
-    }
-
-    return this.repo.remove(user);
+    return this.repo.findOneAndDelete({ id });
   }
 }
