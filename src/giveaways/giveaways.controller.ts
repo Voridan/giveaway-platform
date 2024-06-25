@@ -37,7 +37,7 @@ export class GiveawaysController {
     return this.giveawaysService.create(body, user);
   }
 
-  @Patch('/:id')
+  @Patch('/moderation/:id')
   @UseGuards(AdminGuard)
   @Serialize(GiveawayDto)
   moderateGiveaway(@Param('id') id: string, @Body() body: ModerateGiveawayDto) {

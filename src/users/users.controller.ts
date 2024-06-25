@@ -12,11 +12,18 @@ import { UsersService } from './users.service';
 import { UserDto } from './dto/user.dto';
 import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CurrentUser } from 'src/decorators/current-user.decorator';
+import { User } from '@app/common';
 
 @Controller('users')
 @Serialize(UserDto)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('/:me')
+  async findme(@CurrentUser() usr: User) {
+    return usr;
+  }
 
   @Get('/:id')
   async findUser(@Param('id') id: string) {
