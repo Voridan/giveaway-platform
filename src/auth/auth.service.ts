@@ -9,7 +9,7 @@ import { PasswordService } from '../users/pasword.service';
 import { LoginUserDto } from '../users/dto/login-user.dto';
 import { randomBytes } from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { UserTypeOrmRepository } from 'src/repository/user.typeorm-repository';
+import { UserTypeOrmRepository } from 'src/repository/typeorm/user.typeorm-repository';
 
 @Injectable()
 export class AuthService {
@@ -45,6 +45,23 @@ export class AuthService {
     if (!passwordMatch) {
       throw new BadRequestException('Invalid password');
     }
+
+    // const tokenPayload: TokenPayload = {
+    //   userId: user.id,
+    //   admin: user.isAdmin,
+    // };
+
+    // const expires = new Date();
+    // expires.setSeconds(
+    //   expires.getSeconds() + this.configService.get<number>('JWT_EXPIRATION'),
+    // );
+
+    // const token = this.jwtService.sign(tokenPayload);
+
+    // res.cookie('Authentication', token, {
+    //   httpOnly: true,
+    //   expires,
+    // });
 
     return user;
   }
@@ -102,6 +119,6 @@ export class AuthService {
     user.resetPasswordExpires = null;
     user.resetPasswordToken = null;
 
-    return this.usersRepo.save(user);
+    return this.usersRepo.save([user]);
   }
 }

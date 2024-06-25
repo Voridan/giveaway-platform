@@ -1,11 +1,9 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne } from 'typeorm';
 import { Giveaway } from './giveaway.entity';
+import { AbstractEntity } from './abstract.entity';
 
 @Entity()
-export class Participant {
-  @PrimaryGeneratedColumn()
-  participantId: number;
-
+export class Participant extends AbstractEntity<Participant> {
   @Column()
   nickname: string;
 

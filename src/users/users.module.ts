@@ -5,7 +5,8 @@ import { AuthService } from '../auth/auth.service';
 import { PasswordService } from './pasword.service';
 import { CurrentUserMiddleware } from '../middlewares/current-user.middleware';
 import { TypeormModule, User } from '@app/common';
-import { UserTypeOrmRepository } from 'src/repository/user.typeorm-repository';
+import { UserTypeOrmRepository } from 'src/repository/typeorm/user.typeorm-repository';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [TypeormModule.forFeature([User])],
@@ -15,6 +16,7 @@ import { UserTypeOrmRepository } from 'src/repository/user.typeorm-repository';
     PasswordService,
     AuthService,
     UserTypeOrmRepository,
+    JwtService,
   ],
   exports: [UsersService, PasswordService],
 })

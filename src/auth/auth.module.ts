@@ -5,7 +5,7 @@ import { AuthController } from './auth.controller';
 import { User } from '@app/common/database/typeorm/entities/user.entity';
 import { MailModule } from 'src/mail/mail.module';
 import { TypeormModule } from '@app/common';
-import { UserTypeOrmRepository } from 'src/repository/user.typeorm-repository';
+import { UserTypeOrmRepository } from 'src/repository/typeorm/user.typeorm-repository';
 
 @Module({
   imports: [UsersModule, MailModule, TypeormModule.forFeature([User])],

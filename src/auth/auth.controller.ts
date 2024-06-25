@@ -3,6 +3,7 @@ import {
   Controller,
   Post,
   Query,
+  Res,
   Session,
   UseGuards,
 } from '@nestjs/common';
@@ -50,9 +51,8 @@ export class AuthController {
 
   @Post('/login')
   @Serialize(UserDto)
-  async loginUser(@Body() body: LoginUserDto, @Session() session: any) {
+  async loginUser(@Body() body: LoginUserDto) {
     const user = await this.authService.login(body);
-    session.userId = user.id;
     return user;
   }
 

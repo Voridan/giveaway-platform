@@ -30,6 +30,12 @@ export class Giveaway extends AbstractEntity<Giveaway> implements IGiveaway {
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 
+  @Column()
+  ownerId: number;
+
+  @Column({ nullable: true })
+  winnerId: number;
+
   @ManyToOne(() => User, (user) => user.ownGiveaways)
   owner: User;
 

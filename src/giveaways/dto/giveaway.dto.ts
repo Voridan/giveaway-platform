@@ -1,8 +1,8 @@
-import { Expose, Transform } from 'class-transformer';
+import { Expose } from 'class-transformer';
 
 export class GiveawayDto {
   @Expose()
-  giveawayId: number;
+  id: number;
 
   @Expose()
   title: string;
@@ -22,11 +22,9 @@ export class GiveawayDto {
   @Expose()
   createdAt: Date;
 
-  @Transform(({ obj }) => obj.owner.userId)
   @Expose()
   ownerId: number;
 
-  @Transform(({ obj }) => obj.winner?.participantId)
   @Expose()
   winnerId: number;
 }

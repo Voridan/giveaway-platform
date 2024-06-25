@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -20,6 +21,10 @@ import { GiveawayDto } from './dto/giveaway.dto';
 import { ModerateGiveawayDto } from './dto/moderate-giveaway.dto';
 import { AdminGuard } from 'src/guards/admin.guard';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
+import { ParticipantsSourceDto } from './dto/participants-source.dto';
+import { AddParticipantsDto } from './dto/add-participants.dto';
+import { PaginationResponseDto } from './dto/pagination-response.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Controller('giveaways')
 export class GiveawaysController {
@@ -34,40 +39,92 @@ export class GiveawaysController {
 
   @Patch('/:id')
   @UseGuards(AdminGuard)
+  @Serialize(GiveawayDto)
   moderateGiveaway(@Param('id') id: string, @Body() body: ModerateGiveawayDto) {
     return this.giveawaysService.moderate(parseInt(id), body.onModeration);
   }
 
+  @Get('/search')
+  @UseGuards(AuthGuard)
+  @Serialize(GiveawayDto)
+  async searchGiveaways(@Query('query') query: string) {
+    return this.giveawaysService.searchGiveaways(query);
+  }
+
+  @Get()
+  @Serialize(PaginationResponseDto)
+  async getPaginatediveaways(
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Query('lastItemId') lastItemId: string,
+  ) {
+    const pageInt = parseInt(page);
+    const limitInt = parseInt(limit);
+    const lastId = parseInt(lastItemId) || undefined;
+    if (isNaN(pageInt) || isNaN(limitInt) || pageInt - 1 < 0 || limitInt < 0) {
+      throw new BadRequestException('Query params must be positive numbers');
+    }
+
+    const [giveaways, total] = await this.giveawaysService.getPaginatediveaways(
+      pageInt,
+      limitInt,
+      lastId,
+    );
+
+    const giveawaysDto = plainToInstance(GiveawayDto, giveaways, {
+      excludeExtraneousValues: true,
+    });
+
+    return new PaginationResponseDto(giveawaysDto, total);
+  }
+
   @Get('/:id/results')
+  @Serialize(GiveawayDto)
+  @UseGuards(AuthGuard)
   giveawayResult(@Param('id') id: string) {
     return this.giveawaysService.getResult(parseInt(id));
   }
 
   @Get('/:id')
+  @Serialize(GiveawayDto)
   async findGiveaway(@Param('id') id: string) {
     const giveaway = await this.giveawaysService.findById(parseInt(id));
     if (giveaway == null) {
-      throw new NotFoundException('User not found.');
+      throw new NotFoundException('Giveaway not found.');
     }
 
     return giveaway;
   }
 
-  @Get()
-  findAllGiveaways(
-    @Query('limit') limit: number,
-    @Query('offset') offset: number,
-  ) {
-    console.log(`limit: ${limit}, offset: ${offset}`);
-  }
-
   @Patch('/:id')
-  updateUser(@Param('id') id: string, @Body() body: UpdateGiveawayDto) {
+  @Serialize(GiveawayDto)
+  @UseGuards(AuthGuard)
+  updateGiveaway(@Param('id') id: string, @Body() body: UpdateGiveawayDto) {
     return this.giveawaysService.update(parseInt(id), body);
   }
 
   @Delete('/:id')
-  removeUser(@Param('id') id: string) {
+  @UseGuards(AdminGuard)
+  @Serialize(GiveawayDto)
+  removeGiveaway(@Param('id') id: string) {
     return this.giveawaysService.remove(parseInt(id));
+  }
+
+  @Post('/collect-participants')
+  @UseGuards(AuthGuard)
+  async collectParticipants(
+    @CurrentUser() user: User,
+    @Body() participantsSourceDto: ParticipantsSourceDto,
+  ) {
+    this.giveawaysService.collectParticipants(participantsSourceDto, user.id);
+  }
+
+  @Post('/add-participants/:id')
+  @UseGuards(AuthGuard)
+  addParticipants(
+    @Param('id') id: string,
+    @Body() addParticipantsDto: AddParticipantsDto,
+  ) {
+    this.giveawaysService.addParticipants(parseInt(id), addParticipantsDto);
   }
 }

@@ -12,8 +12,8 @@ export abstract class GenericTypeOrmRepository<T extends AbstractEntity<T>> {
   protected abstract readonly logger: Logger;
 
   constructor(
-    private readonly entityRepository: Repository<T>,
-    private readonly entityManager: EntityManager,
+    protected readonly entityRepository: Repository<T>,
+    protected readonly entityManager: EntityManager,
   ) {}
 
   async create(entity: T): Promise<T> {
@@ -59,7 +59,7 @@ export abstract class GenericTypeOrmRepository<T extends AbstractEntity<T>> {
     return this.entityRepository.delete(where);
   }
 
-  save(entity: T) {
+  save(entity: T[]) {
     return this.entityRepository.save(entity);
   }
 }

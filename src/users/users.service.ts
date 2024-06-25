@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '@app/common/database/typeorm/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UserTypeOrmRepository } from 'src/repository/user.typeorm-repository';
+import { UserTypeOrmRepository } from 'src/repository/typeorm/user.typeorm-repository';
 
 @Injectable()
 export class UsersService {
@@ -21,7 +21,6 @@ export class UsersService {
   }
 
   findAll() {
-    //! to make pagination (on last item id)
     return this.repo.find({});
   }
 
