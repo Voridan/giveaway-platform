@@ -8,10 +8,13 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { GiveawayMongooseRepository } from 'src/repository/mongodb/giveaway.mongoose-repository';
 import { MongooseModule } from '@nestjs/mongoose';
 import { GiveawayDocument, GiveawaySchema, Participant } from '@app/common';
-import { ParticipantsTypeOrmRepository } from 'src/repository/typeorm/participants.typeorm-repository';
+import { UsersModule } from 'src/users/users.module';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
   imports: [
+    UsersModule,
+    MailModule,
     TypeOrmModule.forFeature([Giveaway, Participant]),
     MongooseModule.forFeature([
       { name: GiveawayDocument.name, schema: GiveawaySchema },
@@ -28,7 +31,6 @@ import { ParticipantsTypeOrmRepository } from 'src/repository/typeorm/participan
     GiveawaysService,
     GiveawayTypeOrmRepository,
     GiveawayMongooseRepository,
-    ParticipantsTypeOrmRepository,
   ],
 })
 export class GiveawaysModule {}

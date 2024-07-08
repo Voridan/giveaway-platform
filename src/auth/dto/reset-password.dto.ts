@@ -5,5 +5,8 @@ export class ResetPasswordDto {
   secret: string;
 
   @IsString()
+  oldPassword: string;
+
+  @IsString()
   newPassword: string;
 }

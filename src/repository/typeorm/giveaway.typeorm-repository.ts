@@ -28,14 +28,77 @@ export class GiveawayTypeOrmRepository extends GenericTypeOrmRepository<Giveaway
     return queryBuilder.getMany();
   }
 
-  getPaginated(offset: number, limit: number, lastItemId: number) {
+  getUnmoderatedByLastId(
+    limit: number,
+    lastItemId: number,
+    relations: string[],
+  ) {
     const qb = this.entityRepository.createQueryBuilder('giveaway');
+    if (lastItemId > 0) qb.where('giveaway.id > :lastItemId', { lastItemId });
+    qb.andWhere('giveaway.onModeration = true');
+    relations.forEach((relation) =>
+      qb.leftJoinAndSelect(`giveaway.${relation}`, relation),
+    );
+
+    return Promise.all([
+      qb.take(limit).orderBy('giveaway.id').getMany(),
+      this.entityRepository.count({ where: { onModeration: true } }),
+    ]);
+  }
+
+  getPartneredGiveaways(
+    partnerId: number,
+    offset: number,
+    limit: number,
+    lastItemId: number,
+    relations: string[],
+  ) {
+    const qb = this.entityRepository
+      .createQueryBuilder('giveaway')
+      .innerJoin(
+        'giveaway_partners_user',
+        'gpu',
+        'gpu.giveawayId = giveaway.id',
+      )
+      .where('gpu.userId = :userId', { userId: partnerId });
+
     if (lastItemId !== undefined) {
-      qb.where('giveaway.id > :lastItemId', { lastItemId });
+      qb.andWhere('gpu.giveawayId > :lastItemId', { lastItemId });
     } else {
       qb.skip(offset);
     }
 
+    relations.forEach((relation) =>
+      qb.leftJoinAndSelect(`giveaway.${relation}`, relation),
+    );
+
     return qb.take(limit).orderBy('giveaway.id').getManyAndCount();
+  }
+
+  getOwnGiveaways(
+    ownerId: number,
+    offset: number,
+    limit: number,
+    next: boolean,
+    lastItemId: number,
+    relations: string[],
+  ) {
+    const qb = this.entityRepository.createQueryBuilder('giveaway');
+    qb.where('giveaway.ownerId = :ownerId', { ownerId });
+    qb.skip(offset);
+    if (lastItemId !== undefined) {
+      next
+        ? qb.andWhere('giveaway.id > :lastItemId', { lastItemId })
+        : qb.andWhere('giveaway.id < :lastItemId', { lastItemId });
+    }
+
+    relations.forEach((relation) =>
+      qb.leftJoinAndSelect(`giveaway.${relation}`, relation),
+    );
+
+    return Promise.all([
+      qb.take(limit).orderBy('giveaway.id').getMany(),
+      this.entityRepository.count({ where: { ownerId } }),
+    ]);
   }
 }

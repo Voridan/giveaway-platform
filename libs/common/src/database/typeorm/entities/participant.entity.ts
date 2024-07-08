@@ -7,6 +7,8 @@ export class Participant extends AbstractEntity<Participant> {
   @Column()
   nickname: string;
 
-  @ManyToOne(() => Giveaway, (giveaway) => giveaway.participants)
+  @ManyToOne(() => Giveaway, (giveaway) => giveaway.participants, {
+    onDelete: 'CASCADE',
+  })
   giveaway: Giveaway;
 }

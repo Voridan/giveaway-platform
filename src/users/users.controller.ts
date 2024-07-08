@@ -12,32 +12,39 @@ import { UsersService } from './users.service';
 import { UserDto } from './dto/user.dto';
 import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { CurrentUser } from 'src/decorators/current-user.decorator';
-import { User } from '@app/common';
+import { CurrentUser } from 'src/decorators';
 
 @Controller('users')
 @Serialize(UserDto)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get('/:me')
-  async findme(@CurrentUser() usr: User) {
-    return usr;
+  @Get()
+  // @Query('limit') limit: number, @Query('offset') offset: number
+  findAllUsers() {
+    // console.log(`limit: ${limit}, offset: ${offset}`);
+    return this.usersService.findAll();
+  }
+
+  @Get('/search')
+  async findSimilar(
+    @CurrentUser('sub') userId: number,
+    @Query('like') like: string,
+  ) {
+    const users = await this.usersService.findSimilar(like);
+    return users.filter((user) => user.id !== userId);
   }
 
   @Get('/:id')
   async findUser(@Param('id') id: string) {
     const user = await this.usersService.findById(parseInt(id));
+    console.log(user);
+
     if (user == null) {
       throw new NotFoundException('User not found.');
     }
 
     return user;
-  }
-
-  @Get()
-  findAllUsers(@Query('limit') limit: number, @Query('offset') offset: number) {
-    console.log(`limit: ${limit}, offset: ${offset}`);
   }
 
   @Patch('/:id')

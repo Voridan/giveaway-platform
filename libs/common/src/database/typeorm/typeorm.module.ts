@@ -5,6 +5,10 @@ import { TypeOrmModule as NestTypeormModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Giveaway } from './entities/giveaway.entity';
 import { Participant } from './entities/participant.entity';
+import { RowsCount } from './entities/rows-count.entity';
+import { UserSubscriber } from './subscribers/user.subscriber';
+import { GiveawaySubscriber } from './subscribers/giveaway.subscriber';
+import { ParticipantSubscriber } from './subscribers/participants.subscriber';
 
 @Module({
   imports: [
@@ -19,11 +23,12 @@ import { Participant } from './entities/participant.entity';
           port: config.get<number>('DB_PORT'),
           username: config.get<string>('DB_USER'),
           password: config.get<string>('DB_PASSWORD'),
-          entities: [User, Giveaway, Participant],
+          entities: [User, Giveaway, Participant, RowsCount],
           synchronize: true,
         };
       },
     }),
   ],
+  providers: [UserSubscriber, GiveawaySubscriber, ParticipantSubscriber],
 })
 export class TypeormModule extends NestTypeormModule {}

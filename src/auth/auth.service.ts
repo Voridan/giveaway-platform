@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,16 +11,22 @@ import { LoginUserDto } from '../users/dto/login-user.dto';
 import { randomBytes } from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserTypeOrmRepository } from 'src/repository/typeorm/user.typeorm-repository';
+import { Tokens } from './types';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { IsNull, Not } from 'typeorm';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly passwordService: PasswordService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     private readonly usersRepo: UserTypeOrmRepository,
   ) {}
 
-  async signup(createUser: CreateUserDto) {
+  async signupLocal(createUser: CreateUserDto) {
     const user = await this.usersService.findByEmail(createUser.email);
     if (user !== null) {
       throw new BadRequestException('Email is taken.');
@@ -27,47 +34,101 @@ export class AuthService {
 
     const hashedPassword = await this.passwordService.hash(createUser.password);
     createUser.password = hashedPassword;
-
-    return this.usersService.create(createUser);
+    const newUser = await this.usersService.create(createUser);
+    const tokens = await this.getTokens(
+      newUser.id,
+      newUser.isAdmin,
+      newUser.email,
+    );
+    await this.updateRefreshTokenHash(newUser.id, tokens.refreshToken);
+    return { user, tokens };
   }
 
-  async login(data: LoginUserDto) {
-    const user = await this.usersService.findByEmail(data.email);
+  async loginLocal(dto: LoginUserDto) {
+    const user = await this.usersService.findByEmail(dto.email);
+
     if (!user) {
-      throw new NotFoundException('User not found.');
+      throw new ForbiddenException('Access denied.');
     }
 
     const passwordMatch = await this.passwordService.compare(
       user.password,
-      data.password,
+      dto.password,
     );
 
     if (!passwordMatch) {
-      throw new BadRequestException('Invalid password');
+      throw new ForbiddenException('Access denied.');
     }
 
-    // const tokenPayload: TokenPayload = {
-    //   userId: user.id,
-    //   admin: user.isAdmin,
-    // };
+    const tokens = await this.getTokens(user.id, user.isAdmin, user.email);
+    await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
+    return { user, tokens };
+  }
 
-    // const expires = new Date();
-    // expires.setSeconds(
-    //   expires.getSeconds() + this.configService.get<number>('JWT_EXPIRATION'),
-    // );
+  logout(userId: number) {
+    return this.usersRepo.findOneAndUpdate(
+      { id: userId, jwtRefreshTokenHash: Not(IsNull()) },
+      { jwtRefreshTokenHash: null },
+    );
+  }
 
-    // const token = this.jwtService.sign(tokenPayload);
+  async refresh(userId: number, rt: string) {
+    const user = await this.usersService.findById(userId);
+    if (!user || !user.jwtRefreshTokenHash) {
+      throw new ForbiddenException('Access denied.');
+    }
 
-    // res.cookie('Authentication', token, {
-    //   httpOnly: true,
-    //   expires,
-    // });
+    const rtMatches = this.passwordService.compare(
+      user.jwtRefreshTokenHash,
+      rt,
+    );
 
-    return user;
+    if (!rtMatches) {
+      throw new ForbiddenException('Access denied.');
+    }
+
+    const tokens = await this.getTokens(user.id, user.isAdmin, user.email);
+    await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
+    return { user, tokens };
+  }
+
+  private async getTokens(
+    userId: number,
+    admin: boolean,
+    email: string,
+  ): Promise<Tokens> {
+    const FIFTEEN_MINS = 60 * 15;
+    const ONE_WEEK = 60 * 60 * 24 * 7;
+    const [at, rt] = await Promise.all([
+      this.jwtService.signAsync(
+        { sub: userId, email, admin },
+        {
+          secret: this.configService.get<string>('JWT_SECRET'),
+          expiresIn: FIFTEEN_MINS,
+        },
+      ),
+      this.jwtService.signAsync(
+        { sub: userId, email, admin },
+        {
+          secret: this.configService.get<string>('JWT_REFRESH'),
+          expiresIn: ONE_WEEK,
+        },
+      ),
+    ]);
+
+    return { accessToken: at, refreshToken: rt };
+  }
+
+  private async updateRefreshTokenHash(userId: number, rt: string) {
+    const hash = await this.passwordService.hash(rt);
+    await this.usersService.update(userId, {
+      jwtRefreshTokenHash: hash,
+    });
   }
 
   async generateResetPasswordTokenAndSave(email: string) {
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.usersRepo.findOne({ email });
+    console.log(user);
     if (!user) {
       throw new NotFoundException('User with that email does not exists');
     }
@@ -92,7 +153,10 @@ export class AuthService {
   }
 
   async resetPassword(id: number, resetPasswordDto: ResetPasswordDto) {
-    const user = await this.usersRepo.findOne({ id });
+    const user = await this.usersRepo.findOne({ id }, undefined, {
+      resetPasswordExpires: true,
+      resetPasswordToken: true,
+    });
 
     if (!user) {
       throw new NotFoundException('user not found');
@@ -103,14 +167,24 @@ export class AuthService {
       throw new BadRequestException('reset token expired');
     }
 
-    const { newPassword, secret } = resetPasswordDto;
+    const { newPassword, oldPassword, secret } = resetPasswordDto;
+
     const isSecretValid = await this.passwordService.compare(
       user.resetPasswordToken,
       secret,
     );
 
+    const passwordMatch = await this.passwordService.compare(
+      user.password,
+      oldPassword,
+    );
+
     if (!isSecretValid) {
       throw new BadRequestException('secret token is invalid');
+    }
+
+    if (!passwordMatch) {
+      throw new BadRequestException('Wrong old password');
     }
 
     const newPasswordHash = await this.passwordService.hash(newPassword);
@@ -119,6 +193,6 @@ export class AuthService {
     user.resetPasswordExpires = null;
     user.resetPasswordToken = null;
 
-    return this.usersRepo.save([user]);
+    return this.usersRepo.save(user);
   }
 }

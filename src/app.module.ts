@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -8,8 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { ConfigModule } from '@app/common/config/config.module';
 import { DatabaseModule } from '@app/common';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const cookieSession = require('cookie-session');
+import { APP_GUARD } from '@nestjs/core';
+import { AccessGuard } from './guards';
 
 @Module({
   imports: [
@@ -21,10 +21,12 @@ const cookieSession = require('cookie-session');
     MailModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AccessGuard,
+    },
+    AppService,
+  ],
 })
-export class AppModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(cookieSession({ keys: ['key1'] })).forRoutes('*');
-  }
-}
+export class AppModule {}

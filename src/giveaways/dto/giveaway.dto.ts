@@ -1,4 +1,5 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
+import { PartnerDto } from './partner.dto';
 
 export class GiveawayDto {
   @Expose()
@@ -8,10 +9,13 @@ export class GiveawayDto {
   title: string;
 
   @Expose()
-  imageUrl: string;
+  description: string | null;
 
   @Expose()
-  price: number;
+  postUrl: string | null;
+
+  @Expose()
+  imageUrl: string | null;
 
   @Expose()
   onModeration: boolean;
@@ -23,8 +27,9 @@ export class GiveawayDto {
   createdAt: Date;
 
   @Expose()
-  ownerId: number;
+  participantsCount: number;
 
   @Expose()
-  winnerId: number;
+  @Type(() => PartnerDto)
+  partners: PartnerDto[];
 }

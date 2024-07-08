@@ -5,13 +5,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinTable,
   ManyToMany,
   OneToMany,
 } from 'typeorm';
 import { AbstractEntity } from './abstract.entity';
 
-@Entity()
+@Entity({ name: 'user' })
 export class User extends AbstractEntity<User> implements IUser {
   @Column()
   userName: string;
@@ -29,6 +28,9 @@ export class User extends AbstractEntity<User> implements IUser {
   createdAt: Date;
 
   @Column({ nullable: true })
+  jwtRefreshTokenHash?: string;
+
+  @Column({ nullable: true })
   resetPasswordToken?: string;
 
   @Column({ type: 'timestamp with time zone', nullable: true })
@@ -37,8 +39,7 @@ export class User extends AbstractEntity<User> implements IUser {
   @OneToMany(() => Giveaway, (giveaway) => giveaway.owner)
   ownGiveaways: Giveaway[];
 
-  @ManyToMany(() => Giveaway)
-  @JoinTable()
+  @ManyToMany(() => Giveaway, (giveaway) => giveaway.partners)
   giveaways: Giveaway[];
 
   @AfterInsert()

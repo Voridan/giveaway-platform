@@ -12,4 +12,8 @@ export class UserTypeOrmRepository extends GenericTypeOrmRepository<User> {
   ) {
     super(userRepo, entiryManager);
   }
+
+  findSimilar(like: string): Promise<User[]> {
+    return this.entityRepository.query('SELECT * FROM find_users($1)', [like]);
+  }
 }

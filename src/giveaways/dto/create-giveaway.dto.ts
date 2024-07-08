@@ -1,14 +1,25 @@
-import { IsNumber, IsString, Min } from 'class-validator';
+import { IsOptional, IsString, IsUrl, Matches } from 'class-validator';
 
 export class CreateGiveawayDto {
   @IsString()
   title: string;
 
-  @IsNumber()
-  @Min(0)
-  price: number;
+  @IsOptional()
+  @IsString()
+  description: string | undefined;
 
-  @IsNumber()
-  @Min(1)
-  ownerId: number;
+  @IsOptional()
+  @IsString()
+  participants: string | undefined;
+
+  @IsOptional()
+  @IsUrl()
+  postUrl: string | undefined;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d+( \d+)*$/, {
+    message: `Partners' ids must be space-separated number IDs`,
+  })
+  partnerIds: string | undefined;
 }
