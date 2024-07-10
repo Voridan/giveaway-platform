@@ -5,14 +5,14 @@ import { GiveawayDocument } from './giveaway.document';
 
 @Schema({ versionKey: false, timestamps: { createdAt: true } })
 export class UserDocument extends AbstractDocument {
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
   userName: string;
+
+  @Prop({ required: true, unique: true })
+  email: string;
 
   @Prop({ required: true })
   password: string;
-
-  @Prop({ required: true })
-  email: string;
 
   @Prop({ default: false })
   isAdmin: boolean;
@@ -23,11 +23,15 @@ export class UserDocument extends AbstractDocument {
   @Prop()
   resetPasswordExpires?: Date;
 
-  @Prop({ type: [{ type: SchemaTypes.ObjectId, ref: 'Giveaway' }] })
+  @Prop({
+    type: [{ type: SchemaTypes.ObjectId, ref: 'Giveaway' }],
+  })
   ownGiveaways: GiveawayDocument[];
 
-  @Prop({ type: [{ type: SchemaTypes.ObjectId, ref: 'Giveaway' }] })
-  partneredGiveaways: GiveawayDocument[];
+  @Prop({
+    type: [{ type: SchemaTypes.ObjectId, ref: 'Giveaway' }],
+  })
+  giveaways: GiveawayDocument[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserDocument);

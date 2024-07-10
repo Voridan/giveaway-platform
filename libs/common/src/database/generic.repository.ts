@@ -9,7 +9,7 @@ export abstract class GenericMongooseRepository<
 
   constructor(protected readonly model: Model<TDocument>) {}
 
-  async create(document: Omit<TDocument, '_id'>): Promise<TDocument> {
+  async create(document: Partial<Omit<TDocument, '_id'>>): Promise<TDocument> {
     const newDoc = new this.model({
       ...document,
       _id: new Types.ObjectId(),

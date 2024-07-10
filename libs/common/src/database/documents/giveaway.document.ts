@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { AbstractDocument } from '../abstract.document';
 import { SchemaTypes } from 'mongoose';
 import { UserDocument } from './user.document';
+import { UserSubdocumentSchema } from './user.subdocument';
 
 @Schema({ versionKey: false, timestamps: { createdAt: true } })
 export class GiveawayDocument extends AbstractDocument {
@@ -14,9 +15,6 @@ export class GiveawayDocument extends AbstractDocument {
   @Prop()
   imageUrl: string;
 
-  @Prop({ required: true })
-  price: number;
-
   @Prop({ default: true })
   onModeration: boolean;
 
@@ -26,10 +24,10 @@ export class GiveawayDocument extends AbstractDocument {
   @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })
   owner: UserDocument;
 
-  @Prop()
-  participantsCount: number;
+  @Prop({ type: [String] })
+  participants: string[];
 
-  @Prop({ type: [{ type: SchemaTypes.ObjectId, ref: 'User' }] })
+  @Prop({ type: [UserSubdocumentSchema] })
   partners: UserDocument[];
 }
 

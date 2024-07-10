@@ -1,22 +1,17 @@
 import { Module } from '@nestjs/common';
 import { GiveawaysController } from './giveaways.controller';
 import { GiveawaysService } from './giveaways.service';
-import { Giveaway } from '@app/common/database/typeorm/entities/giveaway.entity';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { GiveawayTypeOrmRepository } from 'src/repository/typeorm/giveaway.typeorm-repository';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { GiveawayMongooseRepository } from 'src/repository/mongodb/giveaway.mongoose-repository';
-import { MongooseModule } from '@nestjs/mongoose';
-import { GiveawayDocument, GiveawaySchema, Participant } from '@app/common';
+import { GiveawayMongooseRepository } from 'src/repository/giveaway.mongoose-repository';
 import { UsersModule } from 'src/users/users.module';
 import { MailModule } from 'src/mail/mail.module';
+import { DatabaseModule, GiveawayDocument, GiveawaySchema } from '@app/common';
 
 @Module({
   imports: [
     UsersModule,
     MailModule,
-    TypeOrmModule.forFeature([Giveaway, Participant]),
-    MongooseModule.forFeature([
+    DatabaseModule.forFeature([
       { name: GiveawayDocument.name, schema: GiveawaySchema },
     ]),
     ClientsModule.register([
@@ -27,10 +22,6 @@ import { MailModule } from 'src/mail/mail.module';
     ]),
   ],
   controllers: [GiveawaysController],
-  providers: [
-    GiveawaysService,
-    GiveawayTypeOrmRepository,
-    GiveawayMongooseRepository,
-  ],
+  providers: [GiveawaysService, GiveawayMongooseRepository],
 })
 export class GiveawaysModule {}

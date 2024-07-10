@@ -10,11 +10,11 @@ import { PasswordService } from '../users/pasword.service';
 import { LoginUserDto } from '../users/dto/login-user.dto';
 import { randomBytes } from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { UserTypeOrmRepository } from 'src/repository/typeorm/user.typeorm-repository';
 import { Tokens } from './types';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { IsNull, Not } from 'typeorm';
+import { UserMongooseRepository } from 'src/repository/user.mongoose-repository';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +23,7 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly usersRepo: UserTypeOrmRepository,
+    private readonly usersRepo: UserMongooseRepository,
   ) {}
 
   async signupLocal(createUser: CreateUserDto) {
