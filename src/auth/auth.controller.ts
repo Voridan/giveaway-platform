@@ -18,10 +18,10 @@ import { RefreshGuard } from 'src/guards';
 import { CurrentUser, PublicRoute } from 'src/decorators';
 import { Email } from 'src/mail/types/email';
 import { getResetPasswordEmailHtml } from './util/get-reset-password-email';
-import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { Response } from 'express';
 import { AuthResponseDto } from './dto/auth-response.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -45,9 +45,9 @@ export class AuthController {
       else throw new BadRequestException('Wrong secret');
     }
 
-    const { user, tokens } = await this.authService.signupLocal(body);
+    const { newUser, tokens } = await this.authService.signupLocal(body);
     this.attachTokenToCookie(res, tokens.refreshToken);
-    return { user, accessToken: tokens.accessToken };
+    return { user: newUser, accessToken: tokens.accessToken };
   }
 
   @PublicRoute()
@@ -64,7 +64,7 @@ export class AuthController {
 
   @Get('/logout')
   logout(
-    @CurrentUser('sub') userId: number,
+    @CurrentUser('sub') userId: string,
     @Res({ passthrough: true }) res: Response,
   ) {
     this.dettachTokenToCookie(res);

@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
 export class UserMongooseRepository extends GenericMongooseRepository<UserDocument> {
-  protected logger: Logger;
+  protected readonly logger = new Logger(UserMongooseRepository.name);
 
   constructor(@InjectModel(UserDocument.name) userModel: Model<UserDocument>) {
     super(userModel);

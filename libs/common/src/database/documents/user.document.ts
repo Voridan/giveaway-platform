@@ -18,6 +18,9 @@ export class UserDocument extends AbstractDocument {
   isAdmin: boolean;
 
   @Prop()
+  jwtRefreshTokenHash?: string;
+
+  @Prop()
   resetPasswordToken?: string;
 
   @Prop()

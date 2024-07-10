@@ -13,7 +13,6 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Tokens } from './types';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { IsNull, Not } from 'typeorm';
 import { UserMongooseRepository } from 'src/repository/user.mongoose-repository';
 
 @Injectable()
@@ -35,13 +34,18 @@ export class AuthService {
     const hashedPassword = await this.passwordService.hash(createUser.password);
     createUser.password = hashedPassword;
     const newUser = await this.usersService.create(createUser);
+
     const tokens = await this.getTokens(
-      newUser.id,
+      newUser._id.toString(),
       newUser.isAdmin,
       newUser.email,
     );
-    await this.updateRefreshTokenHash(newUser.id, tokens.refreshToken);
-    return { user, tokens };
+    await this.updateRefreshTokenHash(
+      newUser._id.toString(),
+      tokens.refreshToken,
+    );
+
+    return { newUser, tokens };
   }
 
   async loginLocal(dto: LoginUserDto) {
@@ -60,19 +64,23 @@ export class AuthService {
       throw new ForbiddenException('Access denied.');
     }
 
-    const tokens = await this.getTokens(user.id, user.isAdmin, user.email);
-    await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
+    const tokens = await this.getTokens(
+      user._id.toString(),
+      user.isAdmin,
+      user.email,
+    );
+    await this.updateRefreshTokenHash(user._id.toString(), tokens.refreshToken);
     return { user, tokens };
   }
 
-  logout(userId: number) {
+  logout(userId: string) {
     return this.usersRepo.findOneAndUpdate(
-      { id: userId, jwtRefreshTokenHash: Not(IsNull()) },
+      { _id: userId, jwtRefreshTokenHash: { $ne: null, $exists: true } },
       { jwtRefreshTokenHash: null },
     );
   }
 
-  async refresh(userId: number, rt: string) {
+  async refresh(userId: string, rt: string) {
     const user = await this.usersService.findById(userId);
     if (!user || !user.jwtRefreshTokenHash) {
       throw new ForbiddenException('Access denied.');
@@ -87,13 +95,17 @@ export class AuthService {
       throw new ForbiddenException('Access denied.');
     }
 
-    const tokens = await this.getTokens(user.id, user.isAdmin, user.email);
-    await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
+    const tokens = await this.getTokens(
+      user._id.toString(),
+      user.isAdmin,
+      user.email,
+    );
+    await this.updateRefreshTokenHash(user._id.toString(), tokens.refreshToken);
     return { user, tokens };
   }
 
   private async getTokens(
-    userId: number,
+    userId: string,
     admin: boolean,
     email: string,
   ): Promise<Tokens> {
@@ -119,7 +131,7 @@ export class AuthService {
     return { accessToken: at, refreshToken: rt };
   }
 
-  private async updateRefreshTokenHash(userId: number, rt: string) {
+  private async updateRefreshTokenHash(userId: string, rt: string) {
     const hash = await this.passwordService.hash(rt);
     await this.usersService.update(userId, {
       jwtRefreshTokenHash: hash,
@@ -128,7 +140,6 @@ export class AuthService {
 
   async generateResetPasswordTokenAndSave(email: string) {
     const user = await this.usersRepo.findOne({ email });
-    console.log(user);
     if (!user) {
       throw new NotFoundException('User with that email does not exists');
     }
@@ -147,16 +158,13 @@ export class AuthService {
     const FIVE_MINS = 5 * 60 * 1000;
 
     user.resetPasswordExpires = new Date(Date.now() + FIVE_MINS);
-    await this.usersService.update(user.id, user);
+    await this.usersService.update(user._id.toString(), user);
 
     return secret;
   }
 
-  async resetPassword(id: number, resetPasswordDto: ResetPasswordDto) {
-    const user = await this.usersRepo.findOne({ id }, undefined, {
-      resetPasswordExpires: true,
-      resetPasswordToken: true,
-    });
+  async resetPassword(id: string, resetPasswordDto: ResetPasswordDto) {
+    const user = await this.usersRepo.findOne({ id });
 
     if (!user) {
       throw new NotFoundException('user not found');

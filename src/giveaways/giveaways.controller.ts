@@ -19,7 +19,6 @@ import { GiveawaysService } from './giveaways.service';
 import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { GiveawayDto } from './dto/giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
-import { ParticipantsSourceDto } from './dto/participants-source.dto';
 import { AddParticipantsDto } from './dto/add-participants.dto';
 import { CurrentUser, PublicRoute } from 'src/decorators';
 import { AdminGuard } from 'src/guards/jwt-admin.guard';
@@ -35,14 +34,14 @@ export class GiveawaysController {
   @Serialize(GiveawayDto)
   createGiveaway(
     @Body() body: CreateGiveawayDto,
-    @CurrentUser('sub') userId: number,
+    @CurrentUser('sub') userId: string,
   ) {
     return this.giveawaysService.create(body, userId);
   }
 
   @Post('/:id/end')
   @Serialize(GiveawayDto)
-  async endGiveaway(@Param('id', ParseIntPipe) id: number) {
+  async endGiveaway(@Param('id') id: string) {
     const giveaway = await this.giveawaysService.end(id);
     return giveaway;
   }
@@ -74,13 +73,13 @@ export class GiveawaysController {
 
   @Get('/:id/results')
   @Serialize(GiveawayResultDto)
-  giveawayResult(@Param('id', ParseIntPipe) id: number) {
+  giveawayResult(@Param('id') id: string) {
     return this.giveawaysService.getResult(id);
   }
 
   @Get('/:id')
   @Serialize(GiveawayDto)
-  async findGiveaway(@Param('id', ParseIntPipe) id: number) {
+  async findGiveaway(@Param('id') id: string) {
     const giveaway = await this.giveawaysService.findById(id);
 
     if (giveaway == null) {
@@ -130,7 +129,7 @@ export class GiveawaysController {
   @Get('/users/:userId')
   @Serialize(GiveawayBaseDto)
   async getOwnGiveaways(
-    @Param('userId', ParseIntPipe) id: number,
+    @Param('userId') id: string,
     @Query('offset', ParseIntPipe) offset: number,
     @Query('limit', ParseIntPipe) limit: number,
     @Query('lastItemId') lastItemId: string,
@@ -186,15 +185,15 @@ export class GiveawaysController {
     return this.giveawaysService.remove(id);
   }
 
-  @Post('/collect-participants')
-  async collectParticipants(
-    @CurrentUser('sub') userId: number,
-    @Body() participantsSourceDto: ParticipantsSourceDto,
-  ) {
-    console.log(participantsSourceDto);
+  // @Post('/collect-participants')
+  // async collectParticipants(
+  //   @CurrentUser('sub') userId: number,
+  //   @Body() participantsSourceDto: ParticipantsSourceDto,
+  // ) {
+  //   console.log(participantsSourceDto);
 
-    this.giveawaysService.collectParticipants(participantsSourceDto, userId);
-  }
+  //   this.giveawaysService.collectParticipants(participantsSourceDto, userId);
+  // }
 
   @Post('/add-participants/:id')
   addParticipants(

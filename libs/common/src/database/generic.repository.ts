@@ -9,7 +9,7 @@ export abstract class GenericMongooseRepository<
 
   constructor(protected readonly model: Model<TDocument>) {}
 
-  async create(document: Partial<Omit<TDocument, '_id'>>): Promise<TDocument> {
+  async create(document: Partial<TDocument>): Promise<TDocument> {
     const newDoc = new this.model({
       ...document,
       _id: new Types.ObjectId(),
@@ -23,11 +23,6 @@ export abstract class GenericMongooseRepository<
     const document = await this.model
       .findOne(filterQuery)
       .lean<TDocument>(true);
-
-    if (!document) {
-      this.logger.warn('Document was not found with filterQuery', filterQuery);
-      throw new NotFoundException('Document was not found');
-    }
 
     return document;
   }
@@ -56,5 +51,11 @@ export abstract class GenericMongooseRepository<
 
   async findOneAndDelete(filterQuery: FilterQuery<TDocument>) {
     return this.model.findOneAndDelete(filterQuery).lean<TDocument>(true);
+  }
+
+  async save(document: TDocument): Promise<TDocument> {
+    const newDoc = new this.model(document);
+    const savedDoc = await newDoc.save();
+    return savedDoc.toJSON() as TDocument;
   }
 }

@@ -7,6 +7,7 @@ import { AccessStrategy, RefreshStrategy } from './strategies';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule, UserDocument, UserSchema } from '@app/common';
+import { UserMongooseRepository } from 'src/repository/user.mongoose-repository';
 
 @Module({
   imports: [
@@ -18,7 +19,12 @@ import { DatabaseModule, UserDocument, UserSchema } from '@app/common';
     MailModule,
     ConfigModule,
   ],
-  providers: [AuthService, AccessStrategy, RefreshStrategy],
+  providers: [
+    AuthService,
+    AccessStrategy,
+    RefreshStrategy,
+    UserMongooseRepository,
+  ],
   controllers: [AuthController],
 })
 export class AuthModule {}

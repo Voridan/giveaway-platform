@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserMongooseRepository } from 'src/repository/user.mongoose-repository';
 import { UserDocument } from '@app/common';
@@ -12,39 +11,40 @@ export class UsersService {
     return this.repo.create(newUser);
   }
 
-  //! findById(id: number) {
-  //   try {
-  //     return this.repo.findOne({ id }, { ownGiveaways: true });
-  //   } catch (error) {
-  //     throw new Error(error);
-  //   }
-  // }
+  findById(_id: string) {
+    try {
+      return this.repo.findOne({ _id });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 
-  //! findManyById(ids: number[]) {
-  //   try {
-  //     return this.repo.find({ id: In(ids) });
-  //   } catch (error) {
-  //     throw new Error(error);
-  //   }
-  // }
+  findManyById(ids: string[]) {
+    try {
+      return this.repo.find({ _id: { $in: ids } });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 
   findByEmail(email: string) {
     return this.repo.findOne({ email });
   }
 
-  //! findSimilar(like: string) {
-  //   return this.repo.findSimilar(like);
-  // }
-
-  findAll() {
-    return this.repo.find({});
+  findSimilar(like: string) {
+    return this.repo.find({
+      $or: [
+        { userName: { $regex: like, $options: 'i' } },
+        { email: { $regex: like, $options: 'i' } },
+      ],
+    });
   }
 
-  async update(id: number, attrs: Partial<UserDocument>) {
-    return this.repo.findOneAndUpdate({ id }, attrs);
+  async update(_id: string, attrs: Partial<UserDocument>) {
+    return this.repo.findOneAndUpdate({ _id }, attrs);
   }
 
-  async remove(id: number) {
-    return this.repo.findOneAndDelete({ id });
+  async remove(_id: string) {
+    return this.repo.findOneAndDelete({ _id });
   }
 }
