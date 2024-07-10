@@ -1,16 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { AbstractDocument } from '../abstract.document';
 import { SchemaTypes } from 'mongoose';
-import { UserDocument } from './user.entity';
-import { IGiveaway } from '@app/common/interface/giveaway.interface';
+import { UserDocument } from './user.document';
 
-@Schema({ versionKey: false, timestamps: { createdAt: true, updatedAt: true } })
-export class GiveawayDocument
-  extends AbstractDocument
-  implements Omit<IGiveaway, 'id' | 'createdAt'>
-{
+@Schema({ versionKey: false, timestamps: { createdAt: true } })
+export class GiveawayDocument extends AbstractDocument {
   @Prop({ required: true })
   title: string;
+
+  @Prop()
+  description: string;
 
   @Prop()
   imageUrl: string;
@@ -27,8 +26,8 @@ export class GiveawayDocument
   @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })
   owner: UserDocument;
 
-  @Prop({ type: [String], default: [] })
-  participants: string[];
+  @Prop()
+  participantsCount: number;
 
   @Prop({ type: [{ type: SchemaTypes.ObjectId, ref: 'User' }] })
   partners: UserDocument[];

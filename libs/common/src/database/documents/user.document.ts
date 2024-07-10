@@ -1,14 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { AbstractDocument } from '../abstract.document';
 import { SchemaTypes } from 'mongoose';
-import { GiveawayDocument } from './giveaway.entity';
-import { IUser } from '@app/common/interface/user.interface';
+import { GiveawayDocument } from './giveaway.document';
 
-@Schema({ versionKey: false, timestamps: { createdAt: true, updatedAt: true } })
-export class UserDocument
-  extends AbstractDocument
-  implements Omit<IUser, 'id' | 'createdAt'>
-{
+@Schema({ versionKey: false, timestamps: { createdAt: true } })
+export class UserDocument extends AbstractDocument {
   @Prop({ required: true })
   userName: string;
 
@@ -31,7 +27,7 @@ export class UserDocument
   ownGiveaways: GiveawayDocument[];
 
   @Prop({ type: [{ type: SchemaTypes.ObjectId, ref: 'Giveaway' }] })
-  partnerInGiveaways: GiveawayDocument[];
+  partneredGiveaways: GiveawayDocument[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserDocument);

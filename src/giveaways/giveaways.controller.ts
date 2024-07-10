@@ -16,7 +16,6 @@ import {
 } from '@nestjs/common';
 import { CreateGiveawayDto } from './dto/create-giveaway.dto';
 import { GiveawaysService } from './giveaways.service';
-import { User } from '@app/common/database/typeorm/entities/user.entity';
 import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { GiveawayDto } from './dto/giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
