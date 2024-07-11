@@ -53,10 +53,8 @@ export class GiveawaysService implements OnModuleInit {
     const { title, description, postUrl, participants, partnerIds } =
       giveawayDto;
 
-    const giveaway = new Giveaway({ owner, title });
+    const giveaway = new Giveaway({ owner, title, description, postUrl });
 
-    if (description) giveaway.description = description;
-    if (postUrl) giveaway.postUrl = postUrl;
     if (participants) {
       try {
         const participantsEntity = this.mapParticipantsToEntity(participants);
@@ -135,12 +133,9 @@ export class GiveawaysService implements OnModuleInit {
   }
 
   async update(id: number, body: UpdateGiveawayDto) {
-    const { title, description, participants, partnersIds, postUrl } = body;
-    const updateObj: Partial<Giveaway> = {};
-
-    if (title) updateObj.title = title;
-    if (description) updateObj.description = description;
-    if (postUrl) updateObj.postUrl = postUrl;
+    const { title, description, postUrl } = body;
+    const { participants, partnersIds } = body;
+    const updateObj: Partial<Giveaway> = { title, description, postUrl };
 
     const relationsToUpdate: FindOptionsRelations<Giveaway> = {};
     relationsToUpdate.participants = !!participants;
@@ -177,7 +172,6 @@ export class GiveawaysService implements OnModuleInit {
         );
       }
     }
-    console.log(updated);
 
     return updated;
   }

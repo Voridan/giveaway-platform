@@ -178,6 +178,8 @@ export class GiveawaysController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateGiveawayDto,
   ) {
+    console.log(body);
+
     return this.giveawaysService.update(id, body);
   }
 
