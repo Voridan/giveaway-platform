@@ -27,12 +27,12 @@ export class UserDocument extends AbstractDocument {
   resetPasswordExpires?: Date;
 
   @Prop({
-    type: [{ type: SchemaTypes.ObjectId, ref: 'Giveaway' }],
+    type: [{ type: SchemaTypes.ObjectId, ref: 'GiveawayDocument' }],
   })
   ownGiveaways: GiveawayDocument[];
 
   @Prop({
-    type: [{ type: SchemaTypes.ObjectId, ref: 'Giveaway' }],
+    type: [{ type: SchemaTypes.ObjectId, ref: 'GiveawayDocument' }],
   })
   giveaways: GiveawayDocument[];
 }

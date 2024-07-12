@@ -45,6 +45,6 @@ export class UsersService {
   }
 
   async remove(_id: string) {
-    return this.repo.findOneAndDelete({ _id });
+    return this.repo.deleteOne({ _id });
   }
 }

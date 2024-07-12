@@ -1,8 +1,9 @@
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 export class AuthResponseDto {
   @Expose()
-  id: number;
+  @Transform(({ obj }) => obj._id)
+  id: string;
 
   @Expose()
   email: string;

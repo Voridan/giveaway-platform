@@ -19,10 +19,12 @@ export abstract class GenericMongooseRepository<
     return jsonDoc;
   }
 
-  async findOne(filterQuery: FilterQuery<TDocument>): Promise<TDocument> {
-    const document = await this.model
-      .findOne(filterQuery)
-      .lean<TDocument>(true);
+  async findOne(
+    filterQuery: FilterQuery<TDocument>,
+    toPopulate?: string[],
+  ): Promise<TDocument> {
+    const document = this.model.findOne(filterQuery).lean<TDocument>(true);
+    toPopulate?.forEach((field) => document.populate(field));
 
     return document;
   }
@@ -30,12 +32,15 @@ export abstract class GenericMongooseRepository<
   async findOneAndUpdate(
     filterQuery: FilterQuery<TDocument>,
     update: UpdateQuery<TDocument>,
+    toPopulate?: string[],
   ): Promise<TDocument> {
-    const document = await this.model
+    const document = this.model
       .findOneAndUpdate(filterQuery, update, {
         new: true,
       })
       .lean<TDocument>(true);
+
+    toPopulate?.forEach((field) => document.populate(field));
 
     if (!document) {
       this.logger.warn('Document was not found with filterQuery', filterQuery);
@@ -49,8 +54,15 @@ export abstract class GenericMongooseRepository<
     return this.model.find(filterQuery).lean<TDocument[]>(true);
   }
 
-  async findOneAndDelete(filterQuery: FilterQuery<TDocument>) {
-    return this.model.findOneAndDelete(filterQuery).lean<TDocument>(true);
+  async updateOne(
+    filterQuery: FilterQuery<TDocument>,
+    update: UpdateQuery<TDocument>,
+  ) {
+    return this.model.updateOne(filterQuery, update).lean<TDocument>(true);
+  }
+
+  async deleteOne(filterQuery: FilterQuery<TDocument>) {
+    return this.model.deleteOne(filterQuery).lean<TDocument>(true);
   }
 
   async save(document: TDocument): Promise<TDocument> {

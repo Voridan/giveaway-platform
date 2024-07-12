@@ -1,8 +1,6 @@
-// import { Giveaway } from '@app/common';
-
-// export class CollectCommentsEvent {
-//   constructor(
-//     public readonly giveaway: Giveaway,
-//     public readonly postUrl: string,
-//   ) {}
-// }
+export class CollectCommentsEvent {
+  constructor(
+    public readonly giveawayId: string,
+    public readonly postUrl: string,
+  ) {}
+}

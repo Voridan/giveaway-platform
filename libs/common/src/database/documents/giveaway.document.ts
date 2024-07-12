@@ -1,10 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { AbstractDocument } from '../abstract.document';
-import { SchemaTypes } from 'mongoose';
-import { UserDocument } from './user.document';
-import { UserSubdocumentSchema } from './user.subdocument';
+import { UserSubdocument, UserSubdocumentSchema } from './user.subdocument';
 
-@Schema({ versionKey: false, timestamps: { createdAt: true } })
+@Schema({
+  versionKey: false,
+  timestamps: { createdAt: true },
+})
 export class GiveawayDocument extends AbstractDocument {
   @Prop({ required: true })
   title: string;
@@ -21,14 +22,23 @@ export class GiveawayDocument extends AbstractDocument {
   @Prop({ default: false })
   ended: boolean;
 
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })
-  owner: UserDocument;
+  @Prop()
+  postUrl: string;
+
+  @Prop()
+  winner: string;
+
+  @Prop({ default: 0 })
+  participantsCount: number;
+
+  @Prop({ type: UserSubdocumentSchema })
+  owner: UserSubdocument;
 
   @Prop({ type: [String] })
   participants: string[];
 
   @Prop({ type: [UserSubdocumentSchema] })
-  partners: UserDocument[];
+  partners: UserSubdocument[];
 }
 
 export const GiveawaySchema = SchemaFactory.createForClass(GiveawayDocument);

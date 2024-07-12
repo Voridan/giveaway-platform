@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         return {
-          uri: 'mongodb://localhost:27017/',
+          uri: config.get<string>('MONGO_URI'),
         };
       },
     }),

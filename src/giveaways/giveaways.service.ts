@@ -1,11 +1,9 @@
 import { getApproveMail } from './util/get-approve-mail';
 import {
   BadRequestException,
-  HttpException,
   Inject,
   Injectable,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
 import { CreateGiveawayDto } from './dto/create-giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
@@ -15,16 +13,20 @@ import { ParticipantsSourceDto } from './dto/participants-source.dto';
 import { CollectCommentsEvent } from './events/collect-comments.event';
 import { AddParticipantsDto } from './dto/add-participants.dto';
 import { UsersService } from 'src/users/users.service';
-import { FindOptionsRelations } from 'typeorm';
 import { MailService } from 'src/mail/mail.service';
 import { ConfigService } from '@nestjs/config';
 import { getDeclineMail } from './util/get-decline-mail';
 import { GiveawayMongooseRepository } from 'src/repository/giveaway.mongoose-repository';
+import { GiveawayDocument, UserSubdocument } from '@app/common';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
 export class GiveawaysService {
   constructor(
     private readonly giveawayRepo: GiveawayMongooseRepository,
+    @InjectModel(UserSubdocument.name)
+    private readonly userSubdocumentModel: Model<UserSubdocument>,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly config: ConfigService,
@@ -32,198 +34,166 @@ export class GiveawaysService {
     private readonly participantsClient: ClientProxy,
   ) {}
 
-  // async create(giveawayDto: CreateGiveawayDto, userId: string) {
-  //   const owner = await this.usersService.findById(userId);
-  //   const { title, description, postUrl, participants, partnerIds } =
-  //     giveawayDto;
+  async create(giveawayDto: CreateGiveawayDto, userId: string) {
+    const owner = await this.usersService.findById(userId);
+    const createObj: Partial<GiveawayDocument> = {
+      title: giveawayDto.title,
+      description: giveawayDto.description,
+      postUrl: giveawayDto.postUrl,
+      owner: new this.userSubdocumentModel({
+        userId: owner._id,
+        email: owner.email,
+        userName: owner.userName,
+      }),
+    };
 
-  //   const giveaway = new Giveaway({ owner, title });
+    if (giveawayDto.participants) {
+      const participantsArray = giveawayDto.participants.trim().split(' ');
+      createObj.participants = participantsArray;
+      createObj.participantsCount = participantsArray.length;
+    }
+    if (giveawayDto.partnersIds) {
+      const idsArray = giveawayDto.partnersIds.trim().split(' ');
+      const partnersDocs = await this.usersService.findManyById(idsArray);
+      const partners = partnersDocs.map(
+        (userDoc) =>
+          new this.userSubdocumentModel({
+            userId: userDoc._id,
+            email: userDoc.email,
+            userName: userDoc.userName,
+          }),
+      );
+      createObj.partners = partners;
+    }
 
-  //   if (description) giveaway.description = description;
-  //   if (postUrl) giveaway.postUrl = postUrl;
-  //   if (participants) {
-  //     try {
-  //       const participantsEntity = this.mapParticipantsToEntity(participants);
-  //       giveaway.participantsCount = participantsEntity.length;
-  //       giveaway.participants = participantsEntity;
-  //     } catch (error) {
-  //       throw new HttpException(
-  //         'Error when saving to the DB. ' + error.message,
-  //         500,
-  //       );
-  //     }
-  //   }
-
-  //   if (partnerIds) {
-  //     const ids = partnerIds.trim().split(' ').map(Number);
-  //     try {
-  //       const partners = await this.usersService.findManyById(ids);
-  //       giveaway.partners = partners;
-  //     } catch (error) {
-  //       throw new HttpException(
-  //         'Error when getting partners. ' + error.message,
-  //         500,
-  //       );
-  //     }
-  //   }
-
-  //   return this.giveawayRepo.save(giveaway);
-  // }
-
-  // async moderateApprove(id: string) {
-  //   const updated = await this.giveawayRepo.findOneAndUpdate(
-  //     { id },
-  //     { onModeration: false },
-  //     { owner: true },
-  //   );
-  //   const owner = updated.owner;
-
-  //   const mail = getApproveMail(owner.email, updated.title);
-  //   await this.mailService.sendEmail({
-  //     from: this.config.get<string>('APP_MAIL'),
-  //     to: owner.email,
-  //     subject: 'Moderation',
-  //     html: mail,
-  //   });
-
-  //   return updated;
-  // }
-
-  // async moderateDelete(id: string) {
-  //   const toDelete = await this.giveawayRepo.findOne({ id }, { owner: true });
-  //   if (!toDelete) throw new NotFoundException('Giveaway not found');
-
-  //   await this.remove(toDelete.id);
-  //   const owner = toDelete.owner;
-
-  //   const mail = getDeclineMail(owner.email, toDelete.title);
-  //   await this.mailService.sendEmail({
-  //     from: this.config.get<string>('APP_MAIL'),
-  //     to: owner.email,
-  //     subject: 'Moderation',
-  //     html: mail,
-  //   });
-
-  //   return toDelete;
-  // }
-
-  // async findById(id: string) {
-  //   const giveaway = await this.giveawayRepo.findOne(
-  //     { id },
-  //     { partners: true },
-  //   );
-  //   giveaway.partners = giveaway.partners.filter(
-  //     (partner) => partner.id !== giveaway.ownerId,
-  //   );
-  //   return giveaway;
-  // }
-
-  // async update(id: string, body: UpdateGiveawayDto) {
-  //   const { title, description, participants, partnersIds, postUrl } = body;
-  //   const updateObj: Partial<Giveaway> = {};
-
-  //   if (title) updateObj.title = title;
-  //   if (description) updateObj.description = description;
-  //   if (postUrl) updateObj.postUrl = postUrl;
-
-  //   const relationsToUpdate: FindOptionsRelations<Giveaway> = {};
-  //   relationsToUpdate.participants = !!participants;
-  //   relationsToUpdate.partners = !!partnersIds;
-
-  //   let updated: Giveaway;
-  //   if (Object.keys(updateObj).length !== 0) {
-  //     updated = await this.giveawayRepo.findOneAndUpdate(
-  //       { id },
-  //       updateObj,
-  //       relationsToUpdate,
-  //     );
-  //   } else {
-  //     updated = await this.giveawayRepo.findOne({ id }, relationsToUpdate);
-  //   }
-
-  //   if (relationsToUpdate.participants) {
-  //     const participantsEntity = this.mapParticipantsToEntity(participants);
-  //     updated.participants.push(...participantsEntity);
-  //     updated.participantsCount += participantsEntity.length;
-  //     updated = await this.giveawayRepo.save(updated);
-  //   }
-
-  //   if (relationsToUpdate.partners) {
-  //     const ids = partnersIds.trim().split(' ').map(Number);
-  //     try {
-  //       const partners = await this.usersService.findManyById(ids);
-  //       updated.partners = partners;
-  //       updated = await this.giveawayRepo.save(updated);
-  //     } catch (error) {
-  //       throw new HttpException(
-  //         'Error when getting partners. ' + error.message,
-  //         500,
-  //       );
-  //     }
-  //   }
-  //   console.log(updated);
-
-  //   return updated;
-  // }
-
-  async end(id: string) {
-    return this.giveawayRepo.findOneAndUpdate({ id }, { ended: true });
+    return this.giveawayRepo.create(createObj);
   }
 
-  // async remove(id: string) {
-  //   return this.giveawayRepo.findOneAndDelete({ id });
-  // }
+  async moderateApprove(_id: string) {
+    const updated = await this.giveawayRepo.findOneAndUpdate(
+      { _id },
+      { onModeration: false },
+    );
 
-  // async getResult(id: string) {
-  //   const giveaway = await this.giveawayRepo.findOne(
-  //     { id },
-  //     {
-  //       participants: true,
-  //       winner: true,
-  //     },
-  //   );
+    const owner = updated.owner;
 
-  //   const results = new GiveawayResultDto();
-  //   results.participants = giveaway.participants.map((p) => p.nickname);
-  //   results.winner = giveaway.winner?.nickname || '';
+    const mail = getApproveMail(owner.email, updated.title);
+    await this.mailService.sendEmail({
+      from: this.config.get<string>('APP_MAIL'),
+      to: owner.email,
+      subject: 'Moderation',
+      html: mail,
+    });
 
-  //   return results;
-  // }
+    return updated;
+  }
 
-  // async collectParticipants(
-  //   participantsSourceDto: ParticipantsSourceDto,
-  //   ownerId: string,
-  // ) {
-  //   const id = participantsSourceDto.giveawayId;
-  //   const giveaway = await this.giveawayRepo.findOne({ id }, { owner: true });
+  async moderateDelete(_id: string) {
+    const toDelete = await this.giveawayRepo.findOne({ _id });
+    if (!toDelete) throw new NotFoundException('Giveaway not found');
 
-  //   if (giveaway.owner?.id !== ownerId) {
-  //     throw new BadRequestException('User does not have such giveaway');
-  //   }
-  //   if (giveaway.onModeration) {
-  //     throw new BadRequestException('Giveaway is on moderation stage');
-  //   }
-  //   if (giveaway.ended) {
-  //     throw new BadRequestException('Giveaway has ended');
-  //   }
+    await this.giveawayRepo.deleteOne(toDelete._id);
+    const owner = toDelete.owner;
 
-  //   this.participantsClient.emit(
-  //     'collect-comments',
-  //     new CollectCommentsEvent(giveaway, participantsSourceDto.postUrl),
-  //   );
-  // }
+    const mail = getDeclineMail(owner.email, toDelete.title);
+    await this.mailService.sendEmail({
+      from: this.config.get<string>('APP_MAIL'),
+      to: owner.email,
+      subject: 'Moderation',
+      html: mail,
+    });
 
-  // async addParticipants(id: string, addParticipantsDto: AddParticipantsDto) {
-  //   const giveaway = await this.giveawayRepo.findOne({ id });
-  //   const participants = this.mapParticipantsToEntity(addParticipantsDto.data);
-  //   giveaway.participants.push(...participants);
-  //   giveaway.participantsCount += participants.length;
-  //   return this.giveawayRepo.save(giveaway);
-  // }
+    return toDelete;
+  }
 
-  // searchGiveaways(query: string) {
-  //   return this.giveawayRepo.searchGiveaways(query);
-  // }
+  async findById(_id: string) {
+    const giveaway = await this.giveawayRepo.findOne({ _id }, ['partners']);
+    return giveaway;
+  }
+
+  async update(_id: string, body: UpdateGiveawayDto) {
+    const { title, description, participants, partnersIds, postUrl } = body;
+    const partnerDocuments = await this.usersService.findManyById(
+      partnersIds?.trim().split(' '),
+    );
+
+    const partnerSubDocuments = partnerDocuments?.map(
+      (userDoc) =>
+        new this.userSubdocumentModel({
+          userId: userDoc._id,
+          email: userDoc.email,
+          userName: userDoc.userName,
+        }),
+    );
+
+    const participantsArr = [...new Set(participants?.trim().split(' '))];
+
+    return this.giveawayRepo.findOneAndUpdate(
+      { _id },
+      {
+        title,
+        description,
+        partners: partnerSubDocuments,
+        postUrl,
+        $inc: { participantsCount: participantsArr.length },
+        $push: { participants: participantsArr },
+      },
+    );
+  }
+
+  async end(_id: string) {
+    return this.giveawayRepo.findOneAndUpdate({ _id }, { ended: true });
+  }
+
+  async remove(_id: string) {
+    return this.giveawayRepo.deleteOne({ _id });
+  }
+
+  async getResult(_id: string) {
+    const giveaway = await this.giveawayRepo.findOne({ _id });
+    return { winner: giveaway.winner, participants: giveaway.participants };
+  }
+
+  async collectParticipants(
+    participantsSourceDto: ParticipantsSourceDto,
+    ownerId: string,
+  ) {
+    const id = participantsSourceDto.giveawayId;
+    const giveaway = await this.giveawayRepo.findOne({ id });
+
+    if (giveaway.owner.userId !== ownerId) {
+      throw new BadRequestException('User does not have such giveaway');
+    }
+    if (giveaway.onModeration) {
+      throw new BadRequestException('Giveaway is on moderation stage');
+    }
+    if (giveaway.ended) {
+      throw new BadRequestException('Giveaway has ended');
+    }
+
+    this.participantsClient.emit(
+      'collect-comments',
+      new CollectCommentsEvent(
+        giveaway._id.toString(),
+        participantsSourceDto.postUrl,
+      ),
+    );
+  }
+
+  async addParticipants(_id: string, addParticipantsDto: AddParticipantsDto) {
+    const participants = addParticipantsDto.data?.trim().split(' ');
+    return this.giveawayRepo.findOneAndUpdate(
+      { _id },
+      {
+        $push: { participants },
+        $inc: { participantsCount: participants.length },
+      },
+    );
+  }
+
+  searchGiveaways(query: string) {
+    return this.giveawayRepo.searchGiveaways(query);
+  }
 
   // async getUnmoderatedGiveaways(
   //   limit: number,
@@ -292,10 +262,5 @@ export class GiveawaysService {
   //     lastItemId,
   //     relations,
   //   );
-  // }
-
-  // private mapParticipantsToEntity(participantsStr: string) {
-  //   const participants = participantsStr.trim().split(' ');
-  //   return participants.map((nickname) => new Participant({ nickname }));
   // }
 }

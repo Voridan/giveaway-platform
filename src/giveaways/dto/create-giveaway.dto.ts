@@ -9,17 +9,20 @@ export class CreateGiveawayDto {
   description: string | undefined;
 
   @IsOptional()
-  @IsString()
-  participants: string | undefined;
-
-  @IsOptional()
   @IsUrl()
   postUrl: string | undefined;
 
   @IsOptional()
   @IsString()
-  @Matches(/^\d+( \d+)*$/, {
-    message: `Partners' ids must be space-separated number IDs`,
+  @Matches(/^[\w]+( [\w]+)*$/, {
+    message: `Participants must be space-separated nicknames`,
   })
-  partnerIds: string | undefined;
+  participants: string | undefined;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-f\d]{24}( [a-f\d]{24})*$/, {
+    message: `Partners' ids must be space-separated ObjectIds`,
+  })
+  partnersIds: string | undefined;
 }

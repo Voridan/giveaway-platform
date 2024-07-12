@@ -1,8 +1,8 @@
-import { IsNumber, IsUrl } from 'class-validator';
+import { IsString, IsUrl } from 'class-validator';
 
 export class ParticipantsSourceDto {
-  @IsNumber()
-  giveawayId: number;
+  @IsString()
+  giveawayId: string;
 
   @IsUrl()
   postUrl: string;

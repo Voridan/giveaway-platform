@@ -1,9 +1,10 @@
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { PartnerDto } from './partner.dto';
 
 export class GiveawayDto {
   @Expose()
-  id: number;
+  @Transform(({ obj }) => obj._id)
+  id: string;
 
   @Expose()
   title: string;

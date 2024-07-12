@@ -158,31 +158,28 @@ export class GiveawaysController {
 
   @Patch('/moderation/:id/approve')
   @UseGuards(AdminGuard)
-  async approveGiveaway(@Param('id', ParseIntPipe) id: number) {
+  async approveGiveaway(@Param('id') id: string) {
     await this.giveawaysService.moderateApprove(id);
     return { message: 'Approved' };
   }
 
   @Delete('/moderation/:id/delete')
   @UseGuards(AdminGuard)
-  async deleteGiveaway(@Param('id', ParseIntPipe) id: number) {
-    await this.giveawaysService.moderateDelete(id);
+  async deleteGiveaway(@Param('id') _id: string) {
+    await this.giveawaysService.moderateDelete(_id);
     return { message: 'Deleted' };
   }
 
   @Patch('/:id')
   @Serialize(GiveawayDto)
-  updateGiveaway(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: UpdateGiveawayDto,
-  ) {
-    return this.giveawaysService.update(id, body);
+  updateGiveaway(@Param('id') _id: string, @Body() body: UpdateGiveawayDto) {
+    return this.giveawaysService.update(_id, body);
   }
 
   @Delete('/:id')
   @Serialize(GiveawayDto)
-  removeGiveaway(@Param('id', ParseIntPipe) id: number) {
-    return this.giveawaysService.remove(id);
+  removeGiveaway(@Param('id') _id: string) {
+    return this.giveawaysService.remove(_id);
   }
 
   // @Post('/collect-participants')
@@ -197,9 +194,9 @@ export class GiveawaysController {
 
   @Post('/add-participants/:id')
   addParticipants(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') _id: string,
     @Body() addParticipantsDto: AddParticipantsDto,
   ) {
-    this.giveawaysService.addParticipants(id, addParticipantsDto);
+    this.giveawaysService.addParticipants(_id, addParticipantsDto);
   }
 }

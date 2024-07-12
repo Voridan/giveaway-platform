@@ -5,7 +5,13 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { GiveawayMongooseRepository } from 'src/repository/giveaway.mongoose-repository';
 import { UsersModule } from 'src/users/users.module';
 import { MailModule } from 'src/mail/mail.module';
-import { DatabaseModule, GiveawayDocument, GiveawaySchema } from '@app/common';
+import {
+  DatabaseModule,
+  GiveawayDocument,
+  GiveawaySchema,
+  UserSubdocument,
+  UserSubdocumentSchema,
+} from '@app/common';
 
 @Module({
   imports: [
@@ -13,6 +19,7 @@ import { DatabaseModule, GiveawayDocument, GiveawaySchema } from '@app/common';
     MailModule,
     DatabaseModule.forFeature([
       { name: GiveawayDocument.name, schema: GiveawaySchema },
+      { name: UserSubdocument.name, schema: UserSubdocumentSchema },
     ]),
     ClientsModule.register([
       {
