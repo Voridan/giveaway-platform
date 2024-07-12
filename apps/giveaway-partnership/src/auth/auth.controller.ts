@@ -9,16 +9,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { LoginUserDto } from 'src/users/dto/login-user.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
+import { LoginUserDto } from '../users/dto/login-user.dto';
 import { AuthService } from './auth.service';
-import { MailService } from 'src/mail/mail.service';
+import { MailService } from '../mail/mail.service';
 import { JwtPayload, JwtPayloadWithRt } from './types';
-import { RefreshGuard } from 'src/guards';
-import { CurrentUser, PublicRoute } from 'src/decorators';
-import { Email } from 'src/mail/types/email';
+import { RefreshGuard } from '../guards';
+import { CurrentUser, PublicRoute } from '../decorators';
+import { Email } from '../mail/types/email';
 import { getResetPasswordEmailHtml } from './util/get-reset-password-email';
-import { Serialize } from 'src/interceptors/serialize.interceptor';
+import { Serialize } from '../interceptors/serialize.interceptor';
 import { Response } from 'express';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';

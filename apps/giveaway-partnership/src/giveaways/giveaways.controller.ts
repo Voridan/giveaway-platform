@@ -1,28 +1,23 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   NotFoundException,
   Param,
-  ParseBoolPipe,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import { CreateGiveawayDto } from './dto/create-giveaway.dto';
 import { GiveawaysService } from './giveaways.service';
-import { Serialize } from 'src/interceptors/serialize.interceptor';
+import { Serialize } from '../interceptors/serialize.interceptor';
 import { GiveawayDto } from './dto/giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
 import { AddParticipantsDto } from './dto/add-participants.dto';
-import { CurrentUser, PublicRoute } from 'src/decorators';
-import { AdminGuard } from 'src/guards/jwt-admin.guard';
-import { Response } from 'express';
+import { CurrentUser } from '../decorators';
+import { AdminGuard } from '../guards/jwt-admin.guard';
 import { GiveawayBaseDto } from './dto/giveaway-base.dto';
 import { GiveawayResultDto } from './dto/giveaway-result.dto';
 
@@ -52,24 +47,24 @@ export class GiveawaysController {
     return this.giveawaysService.searchGiveaways(query);
   }
 
-  @PublicRoute()
-  @Get()
-  @Serialize(GiveawayBaseDto)
-  async getPaginatediveaways(
-    @Query('limit', ParseIntPipe) limit: number,
-    @Query('lastItemId', ParseIntPipe) lastItemId: number,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    try {
-      const [giveaways, total] =
-        await this.giveawaysService.getUnmoderatedGiveaways(limit, lastItemId);
+  // @PublicRoute()
+  // @Get()
+  // @Serialize(GiveawayBaseDto)
+  // async getPaginatediveaways(
+  //   @Query('limit', ParseIntPipe) limit: number,
+  //   @Query('lastItemId', ParseIntPipe) lastItemId: number,
+  //   @Res({ passthrough: true }) response: Response,
+  // ) {
+  //   try {
+  //     const [giveaways, total] =
+  //       await this.giveawaysService.getUnmoderatedGiveaways(limit, lastItemId);
 
-      response.setHeader('giveaways-total-count', total);
-      return giveaways;
-    } catch (error) {
-      throw new BadRequestException();
-    }
-  }
+  //     response.setHeader('giveaways-total-count', total);
+  //     return giveaways;
+  //   } catch (error) {
+  //     throw new BadRequestException();
+  //   }
+  // }
 
   @Get('/:id/results')
   @Serialize(GiveawayResultDto)
@@ -126,35 +121,35 @@ export class GiveawaysController {
   //   }
   // }
 
-  @Get('/users/:userId')
-  @Serialize(GiveawayBaseDto)
-  async getOwnGiveaways(
-    @Param('userId') id: string,
-    @Query('offset', ParseIntPipe) offset: number,
-    @Query('limit', ParseIntPipe) limit: number,
-    @Query('lastItemId') lastItemId: string,
-    @Query('next', ParseBoolPipe) next: boolean,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    try {
-      const lastId = parseInt(lastItemId) || undefined;
+  // @Get('/users/:userId')
+  // @Serialize(GiveawayBaseDto)
+  // async getOwnGiveaways(
+  //   @Param('userId') id: string,
+  //   @Query('offset', ParseIntPipe) offset: number,
+  //   @Query('limit', ParseIntPipe) limit: number,
+  //   @Query('lastItemId') lastItemId: string,
+  //   @Query('next', ParseBoolPipe) next: boolean,
+  //   @Res({ passthrough: true }) response: Response,
+  // ) {
+  //   try {
+  //     const lastId = parseInt(lastItemId) || undefined;
 
-      const [giveaways, total] =
-        await this.giveawaysService.getOwnPaginatedGiveaways(
-          id,
-          offset,
-          limit,
-          next,
-          lastId,
-          [],
-        );
+  //     const [giveaways, total] =
+  //       await this.giveawaysService.getOwnPaginatedGiveaways(
+  //         id,
+  //         offset,
+  //         limit,
+  //         next,
+  //         lastId,
+  //         [],
+  //       );
 
-      response.setHeader('giveaways-total-count', total);
-      return giveaways;
-    } catch (error) {
-      throw new BadRequestException();
-    }
-  }
+  //     response.setHeader('giveaways-total-count', total);
+  //     return giveaways;
+  //   } catch (error) {
+  //     throw new BadRequestException();
+  //   }
+  // }
 
   @Patch('/moderation/:id/approve')
   @UseGuards(AdminGuard)

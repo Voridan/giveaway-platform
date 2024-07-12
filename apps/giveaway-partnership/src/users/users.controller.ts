@@ -8,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UserDto } from './dto/user.dto';
-import { Serialize } from 'src/interceptors/serialize.interceptor';
-import { CurrentUser } from 'src/decorators';
+import { Serialize } from '../interceptors/serialize.interceptor';
+import { CurrentUser } from '../decorators';
 
 @Controller('users')
 @Serialize(UserDto)

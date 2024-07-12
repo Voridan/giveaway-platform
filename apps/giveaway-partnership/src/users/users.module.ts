@@ -5,7 +5,7 @@ import { AuthService } from '../auth/auth.service';
 import { PasswordService } from './pasword.service';
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule, UserDocument, UserSchema } from '@app/common';
-import { UserMongooseRepository } from 'src/repository/user.mongoose-repository';
+import { UserMongooseRepository } from '../repository/user.mongoose-repository';
 
 @Module({
   imports: [

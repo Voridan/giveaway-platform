@@ -13,7 +13,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Tokens } from './types';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { UserMongooseRepository } from 'src/repository/user.mongoose-repository';
+import { UserMongooseRepository } from '../repository/user.mongoose-repository';
 
 @Injectable()
 export class AuthService {

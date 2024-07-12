@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { UsersModule } from 'src/users/users.module';
+import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
-import { MailModule } from 'src/mail/mail.module';
+import { MailModule } from '../mail/mail.module';
 import { AccessStrategy, RefreshStrategy } from './strategies';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule, UserDocument, UserSchema } from '@app/common';
-import { UserMongooseRepository } from 'src/repository/user.mongoose-repository';
+import { UserMongooseRepository } from '../repository/user.mongoose-repository';
 
 @Module({
   imports: [

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UserMongooseRepository } from 'src/repository/user.mongoose-repository';
+import { UserMongooseRepository } from '../repository/user.mongoose-repository';
 import { UserDocument } from '@app/common';
 
 @Injectable()

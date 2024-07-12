@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { GiveawaysController } from './giveaways.controller';
 import { GiveawaysService } from './giveaways.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { GiveawayMongooseRepository } from 'src/repository/giveaway.mongoose-repository';
-import { UsersModule } from 'src/users/users.module';
-import { MailModule } from 'src/mail/mail.module';
+import { GiveawayMongooseRepository } from '../repository/giveaway.mongoose-repository';
+import { UsersModule } from '../users/users.module';
+import { MailModule } from '../mail/mail.module';
 import {
   DatabaseModule,
   GiveawayDocument,
