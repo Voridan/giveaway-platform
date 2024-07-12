@@ -20,6 +20,7 @@ import { CurrentUser } from '../decorators';
 import { AdminGuard } from '../guards/jwt-admin.guard';
 import { GiveawayBaseDto } from './dto/giveaway-base.dto';
 import { GiveawayResultDto } from './dto/giveaway-result.dto';
+import { ParticipantsSourceDto } from './dto/participants-source.dto';
 
 @Controller('giveaways')
 export class GiveawaysController {
@@ -177,15 +178,14 @@ export class GiveawaysController {
     return this.giveawaysService.remove(_id);
   }
 
-  // @Post('/collect-participants')
-  // async collectParticipants(
-  //   @CurrentUser('sub') userId: number,
-  //   @Body() participantsSourceDto: ParticipantsSourceDto,
-  // ) {
-  //   console.log(participantsSourceDto);
-
-  //   this.giveawaysService.collectParticipants(participantsSourceDto, userId);
-  // }
+  @Post('/collect-participants')
+  async collectParticipants(
+    @CurrentUser('sub') userId: string,
+    @Body() participantsSourceDto: ParticipantsSourceDto,
+  ) {
+    console.log(participantsSourceDto);
+    this.giveawaysService.collectParticipants(participantsSourceDto, userId);
+  }
 
   @Post('/add-participants/:id')
   addParticipants(

@@ -1,12 +1,16 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { ParticipantsCollectorService } from './participants-collector.service';
+import { EventPattern } from '@nestjs/microservices';
+import { CollectCommentsEvent } from '@app/common/events/collect-comments.event';
 
 @Controller()
 export class ParticipantsCollectorController {
-  constructor(private readonly participantsCollectorService: ParticipantsCollectorService) {}
+  constructor(
+    private readonly participantsCollectorService: ParticipantsCollectorService,
+  ) {}
 
-  @Get()
-  getHello(): string {
-    return this.participantsCollectorService.getHello();
+  @EventPattern('collect-comments')
+  async collectComments(data: CollectCommentsEvent) {
+    this.participantsCollectorService.collectInstagramComments(data);
   }
 }

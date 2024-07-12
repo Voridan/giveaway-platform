@@ -9,7 +9,7 @@ import { CreateGiveawayDto } from './dto/create-giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { ParticipantsSourceDto } from './dto/participants-source.dto';
-import { CollectCommentsEvent } from './events/collect-comments.event';
+import { CollectCommentsEvent } from '@app/common/events/collect-comments.event';
 import { AddParticipantsDto } from './dto/add-participants.dto';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
