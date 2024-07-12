@@ -9,7 +9,6 @@ import { CreateGiveawayDto } from './dto/create-giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { ParticipantsSourceDto } from './dto/participants-source.dto';
-import { CollectCommentsEvent } from '@app/common/events/collect-comments.event';
 import { AddParticipantsDto } from './dto/add-participants.dto';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
@@ -19,6 +18,7 @@ import { GiveawayMongooseRepository } from '../repository/giveaway.mongoose-repo
 import { GiveawayDocument, UserSubdocument } from '@app/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
+import { CollectParticipantsEvent } from '@app/common/events/collect-participants.event';
 
 @Injectable()
 export class GiveawaysService {
@@ -172,7 +172,7 @@ export class GiveawaysService {
 
     this.participantsClient.emit(
       'collect-comments',
-      new CollectCommentsEvent(
+      new CollectParticipantsEvent(
         giveaway._id.toString(),
         participantsSourceDto.postUrl,
       ),

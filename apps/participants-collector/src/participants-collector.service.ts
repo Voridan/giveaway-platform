@@ -1,4 +1,4 @@
-import { CollectCommentsEvent } from '@app/common/events/collect-comments.event';
+import { CollectParticipantsEvent } from '@app/common/events/collect-participants.event';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GiveawayMongooseRepository } from 'apps/giveaway-partnership/src/repository/giveaway.mongoose-repository';
@@ -11,7 +11,7 @@ export class ParticipantsCollectorService {
     private readonly giveawaysRepo: GiveawayMongooseRepository,
   ) {}
 
-  async collectInstagramComments(eventData: CollectCommentsEvent) {
+  async collectInstagramComments(eventData: CollectParticipantsEvent) {
     const postId = this.extractPostId(eventData.postUrl);
 
     if (postId) {
