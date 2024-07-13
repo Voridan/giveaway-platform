@@ -194,24 +194,13 @@ export class GiveawaysService {
     return this.giveawayRepo.searchGiveaways(query);
   }
 
-  // async getUnmoderatedGiveaways(
-  //   limit: number,
-  //   lastItemId: number,
-  //   relations: string[] = [],
-  // ) {
-  //   if (lastItemId !== undefined && lastItemId > 0) {
-  //     const item = await this.giveawayRepo.findOne({ id: lastItemId });
-  //     if (!item) {
-  //       throw new NotFoundException('Last item id is invalid.');
-  //     }
-  //   }
-
-  //   return this.giveawayRepo.getUnmoderatedByLastId(
-  //     limit,
-  //     lastItemId,
-  //     relations,
-  //   );
-  // }
+  async getUnmoderatedGiveaways(limit: number, lastItemId: string) {
+    try {
+      return this.giveawayRepo.getUnmoderatedByLastId(limit, lastItemId);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 
   // async getPartneredPaginatedGiveaways(
   //   partnerId: number,
@@ -238,28 +227,23 @@ export class GiveawaysService {
   //   );
   // }
 
-  // async getOwnPaginatedGiveaways(
-  //   userId: number,
-  //   offset: number,
-  //   limit: number,
-  //   next: boolean,
-  //   lastItemId: number,
-  //   relations: string[] = [],
-  // ) {
-  //   if (lastItemId !== undefined) {
-  //     const item = await this.giveawayRepo.findOne({ id: lastItemId });
-  //     if (!item) {
-  //       throw new NotFoundException('Last item id is invalid.');
-  //     }
-  //   }
-
-  //   return this.giveawayRepo.getOwnGiveaways(
-  //     userId,
-  //     offset,
-  //     limit,
-  //     next,
-  //     lastItemId,
-  //     relations,
-  //   );
-  // }
+  async getOwnPaginatedGiveaways(
+    userId: string,
+    offset: number,
+    limit: number,
+    next: boolean,
+    lastItemId: string,
+  ) {
+    try {
+      return this.giveawayRepo.getOwnGiveaways(
+        userId,
+        offset,
+        limit,
+        next,
+        lastItemId,
+      );
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 }

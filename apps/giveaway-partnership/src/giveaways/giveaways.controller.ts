@@ -1,13 +1,16 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { CreateGiveawayDto } from './dto/create-giveaway.dto';
@@ -16,11 +19,12 @@ import { Serialize } from '../interceptors/serialize.interceptor';
 import { GiveawayDto } from './dto/giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
 import { AddParticipantsDto } from './dto/add-participants.dto';
-import { CurrentUser } from '../decorators';
+import { CurrentUser, PublicRoute } from '../decorators';
 import { AdminGuard } from '../guards/jwt-admin.guard';
 import { GiveawayBaseDto } from './dto/giveaway-base.dto';
 import { GiveawayResultDto } from './dto/giveaway-result.dto';
 import { ParticipantsSourceDto } from './dto/participants-source.dto';
+import { Response } from 'express';
 
 @Controller('giveaways')
 export class GiveawaysController {
@@ -48,24 +52,24 @@ export class GiveawaysController {
     return this.giveawaysService.searchGiveaways(query);
   }
 
-  // @PublicRoute()
-  // @Get()
-  // @Serialize(GiveawayBaseDto)
-  // async getPaginatediveaways(
-  //   @Query('limit', ParseIntPipe) limit: number,
-  //   @Query('lastItemId', ParseIntPipe) lastItemId: number,
-  //   @Res({ passthrough: true }) response: Response,
-  // ) {
-  //   try {
-  //     const [giveaways, total] =
-  //       await this.giveawaysService.getUnmoderatedGiveaways(limit, lastItemId);
+  @Get()
+  @UseGuards(AdminGuard)
+  @Serialize(GiveawayBaseDto)
+  async getPaginatediveaways(
+    @Query('limit', ParseIntPipe) limit: number,
+    @Query('lastItemId') lastItemId: string,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    try {
+      const [giveaways, total] =
+        await this.giveawaysService.getUnmoderatedGiveaways(limit, lastItemId);
 
-  //     response.setHeader('giveaways-total-count', total);
-  //     return giveaways;
-  //   } catch (error) {
-  //     throw new BadRequestException();
-  //   }
-  // }
+      response.setHeader('giveaways-total-count', total);
+      return giveaways;
+    } catch (error) {
+      throw new BadRequestException();
+    }
+  }
 
   @Get('/:id/results')
   @Serialize(GiveawayResultDto)

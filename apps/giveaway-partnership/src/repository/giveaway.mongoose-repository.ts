@@ -1,7 +1,7 @@
 import { GenericMongooseRepository, GiveawayDocument } from '@app/common';
 import { Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 
 export class GiveawayMongooseRepository extends GenericMongooseRepository<GiveawayDocument> {
   protected readonly logger = new Logger(GiveawayMongooseRepository.name);
@@ -48,5 +48,35 @@ export class GiveawayMongooseRepository extends GenericMongooseRepository<Giveaw
         },
       },
     ]);
+  }
+
+  async getUnmoderatedByLastId(limit: number, lastItemId: string) {
+    const filter: FilterQuery<GiveawayDocument> = { onModeration: true };
+    if (lastItemId) filter['_id'] = { $gt: new Types.ObjectId(lastItemId) };
+
+    const [result] = await this.model.aggregate([
+      { $match: filter },
+      { $sort: { _id: 1 } },
+      {
+        $facet: {
+          giveaways: [{ $limit: limit }],
+          totalCount: [{ $count: 'count' }],
+        },
+      },
+    ]);
+
+    return [result.giveaways, result.totalCount];
+  }
+
+  getOwnGiveaways(
+    userId: string,
+    offset: number,
+    limit: number,
+    next: boolean,
+    lastItemId: string,
+  ) {
+    const filter: FilterQuery<GiveawayDocument> = { 'owner.userId': userId };
+    if (next) {
+    }
   }
 }
