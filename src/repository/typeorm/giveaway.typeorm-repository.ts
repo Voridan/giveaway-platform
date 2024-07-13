@@ -79,18 +79,11 @@ export class GiveawayTypeOrmRepository extends GenericTypeOrmRepository<Giveaway
     ownerId: number,
     offset: number,
     limit: number,
-    next: boolean,
-    lastItemId: number,
     relations: string[],
   ) {
     const qb = this.entityRepository.createQueryBuilder('giveaway');
     qb.where('giveaway.ownerId = :ownerId', { ownerId });
     qb.skip(offset);
-    if (lastItemId !== undefined) {
-      next
-        ? qb.andWhere('giveaway.id > :lastItemId', { lastItemId })
-        : qb.andWhere('giveaway.id < :lastItemId', { lastItemId });
-    }
 
     relations.forEach((relation) =>
       qb.leftJoinAndSelect(`giveaway.${relation}`, relation),

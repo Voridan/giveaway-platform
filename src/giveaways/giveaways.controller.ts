@@ -6,7 +6,6 @@ import {
   Get,
   NotFoundException,
   Param,
-  ParseBoolPipe,
   ParseIntPipe,
   Patch,
   Post,
@@ -16,7 +15,6 @@ import {
 } from '@nestjs/common';
 import { CreateGiveawayDto } from './dto/create-giveaway.dto';
 import { GiveawaysService } from './giveaways.service';
-import { User } from '@app/common/database/typeorm/entities/user.entity';
 import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { GiveawayDto } from './dto/giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
@@ -134,20 +132,14 @@ export class GiveawaysController {
     @Param('userId', ParseIntPipe) id: number,
     @Query('offset', ParseIntPipe) offset: number,
     @Query('limit', ParseIntPipe) limit: number,
-    @Query('lastItemId') lastItemId: string,
-    @Query('next', ParseBoolPipe) next: boolean,
     @Res({ passthrough: true }) response: Response,
   ) {
     try {
-      const lastId = parseInt(lastItemId) || undefined;
-
       const [giveaways, total] =
         await this.giveawaysService.getOwnPaginatedGiveaways(
           id,
           offset,
           limit,
-          next,
-          lastId,
           [],
         );
 

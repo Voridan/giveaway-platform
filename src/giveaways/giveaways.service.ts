@@ -283,25 +283,9 @@ export class GiveawaysService implements OnModuleInit {
     userId: number,
     offset: number,
     limit: number,
-    next: boolean,
-    lastItemId: number,
     relations: string[] = [],
   ) {
-    if (lastItemId !== undefined) {
-      const item = await this.giveawayRepo.findOne({ id: lastItemId });
-      if (!item) {
-        throw new NotFoundException('Last item id is invalid.');
-      }
-    }
-
-    return this.giveawayRepo.getOwnGiveaways(
-      userId,
-      offset,
-      limit,
-      next,
-      lastItemId,
-      relations,
-    );
+    return this.giveawayRepo.getOwnGiveaways(userId, offset, limit, relations);
   }
 
   private mapParticipantsToEntity(participantsStr: string) {
