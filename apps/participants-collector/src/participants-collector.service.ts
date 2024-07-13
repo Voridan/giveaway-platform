@@ -1,8 +1,8 @@
 import { CollectParticipantsEvent } from '@app/common/events/collect-participants.event';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GiveawayMongooseRepository } from 'apps/giveaway-partnership/src/repository/giveaway.mongoose-repository';
 import * as ref from 'instagram-id-to-url-segment';
+import { GiveawayMongooseRepository } from './repository/giveaway.mongoose-repository';
 
 @Injectable()
 export class ParticipantsCollectorService {

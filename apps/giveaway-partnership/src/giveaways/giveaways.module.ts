@@ -9,9 +9,12 @@ import {
   DatabaseModule,
   GiveawayDocument,
   GiveawaySchema,
+  UserDocument,
+  UserSchema,
   UserSubdocument,
   UserSubdocumentSchema,
 } from '@app/common';
+import { UserMongooseRepository } from '../repository/user.mongoose-repository';
 
 @Module({
   imports: [
@@ -19,6 +22,7 @@ import {
     MailModule,
     DatabaseModule.forFeature([
       { name: GiveawayDocument.name, schema: GiveawaySchema },
+      { name: UserDocument.name, schema: UserSchema },
       { name: UserSubdocument.name, schema: UserSubdocumentSchema },
     ]),
     ClientsModule.register([
@@ -29,6 +33,10 @@ import {
     ]),
   ],
   controllers: [GiveawaysController],
-  providers: [GiveawaysService, GiveawayMongooseRepository],
+  providers: [
+    GiveawaysService,
+    GiveawayMongooseRepository,
+    UserMongooseRepository,
+  ],
 })
 export class GiveawaysModule {}

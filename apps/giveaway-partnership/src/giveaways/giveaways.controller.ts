@@ -33,10 +33,10 @@ export class GiveawaysController {
   @Post()
   @Serialize(GiveawayDto)
   createGiveaway(
-    @Body() body: CreateGiveawayDto,
     @CurrentUser('sub') userId: string,
+    @Body() body: CreateGiveawayDto,
   ) {
-    return this.giveawaysService.create(body, userId);
+    return this.giveawaysService.create(userId, body);
   }
 
   @Post('/:id/end')
@@ -53,7 +53,8 @@ export class GiveawaysController {
   }
 
   @Get()
-  @UseGuards(AdminGuard)
+  // @UseGuards(AdminGuard)
+  @PublicRoute()
   @Serialize(GiveawayBaseDto)
   async getPaginatediveaways(
     @Query('limit', ParseIntPipe) limit: number,
@@ -63,11 +64,10 @@ export class GiveawaysController {
     try {
       const [giveaways, total] =
         await this.giveawaysService.getUnmoderatedGiveaways(limit, lastItemId);
-
       response.setHeader('giveaways-total-count', total);
       return giveaways;
     } catch (error) {
-      throw new BadRequestException();
+      throw new BadRequestException(error.message);
     }
   }
 
@@ -81,7 +81,6 @@ export class GiveawaysController {
   @Serialize(GiveawayDto)
   async findGiveaway(@Param('id') id: string) {
     const giveaway = await this.giveawaysService.findById(id);
-
     if (giveaway == null) {
       throw new NotFoundException('Giveaway not found.');
     }
@@ -89,72 +88,47 @@ export class GiveawaysController {
     return giveaway;
   }
 
-  // @Get('/partners/:userId')
-  // @Serialize(GiveawayBaseDto)
-  // async getPatnerGiveaways(
-  //   @Param('userId') id: string,
-  //   @Query('page') page: string,
-  //   @Query('limit') limit: string,
-  //   @Query('lastItemId') lastItemId: string,
-  //   @Res({ passthrough: true }) response: Response,
-  // ) {
-  //   try {
-  //     const pageInt = parseInt(page);
-  //     const limitInt = parseInt(limit);
-  //     const lastId = parseInt(lastItemId) || undefined;
-  //     if (
-  //       isNaN(pageInt) ||
-  //       isNaN(limitInt) ||
-  //       pageInt - 1 < 0 ||
-  //       limitInt < 0
-  //     ) {
-  //       throw new BadRequestException('Query params must be positive numbers');
-  //     }
+  @Get('/partners/:userId')
+  @Serialize(GiveawayBaseDto)
+  async getPatnerGiveaways(
+    @Param('userId') id: string,
+    @Query('offset', ParseIntPipe) offset: number,
+    @Query('limit', ParseIntPipe) limit: number,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    try {
+      const [giveaways, total] =
+        await this.giveawaysService.getPartneredPaginatedGiveaways(
+          id,
+          offset,
+          limit,
+        );
 
-  //     const [giveaways, total] =
-  //       await this.giveawaysService.getPartneredPaginatedGiveaways(
-  //         parseInt(id),
-  //         pageInt,
-  //         limitInt,
-  //         lastId,
-  //       );
+      response.setHeader('giveaways-total-count', total);
+      return giveaways;
+    } catch (error) {
+      throw new BadRequestException();
+    }
+  }
 
-  //     response.setHeader('giveaways-total-count', total);
-  //     return giveaways;
-  //   } catch (error) {
-  //     throw new BadRequestException();
-  //   }
-  // }
+  @Get('/users/:userId')
+  @Serialize(GiveawayBaseDto)
+  async getOwnGiveaways(
+    @Param('userId') id: string,
+    @Query('offset', ParseIntPipe) offset: number,
+    @Query('limit', ParseIntPipe) limit: number,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    try {
+      const [giveaways, total] =
+        await this.giveawaysService.getOwnPaginatedGiveaways(id, offset, limit);
 
-  // @Get('/users/:userId')
-  // @Serialize(GiveawayBaseDto)
-  // async getOwnGiveaways(
-  //   @Param('userId') id: string,
-  //   @Query('offset', ParseIntPipe) offset: number,
-  //   @Query('limit', ParseIntPipe) limit: number,
-  //   @Query('lastItemId') lastItemId: string,
-  //   @Query('next', ParseBoolPipe) next: boolean,
-  //   @Res({ passthrough: true }) response: Response,
-  // ) {
-  //   try {
-  //     const lastId = parseInt(lastItemId) || undefined;
-
-  //     const [giveaways, total] =
-  //       await this.giveawaysService.getOwnPaginatedGiveaways(
-  //         id,
-  //         offset,
-  //         limit,
-  //         next,
-  //         lastId,
-  //         [],
-  //       );
-
-  //     response.setHeader('giveaways-total-count', total);
-  //     return giveaways;
-  //   } catch (error) {
-  //     throw new BadRequestException();
-  //   }
-  // }
+      response.setHeader('giveaways-total-count', total);
+      return giveaways;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 
   @Patch('/moderation/:id/approve')
   @UseGuards(AdminGuard)

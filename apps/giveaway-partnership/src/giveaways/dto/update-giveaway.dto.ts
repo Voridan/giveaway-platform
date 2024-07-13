@@ -26,7 +26,7 @@ export class UpdateGiveawayDto {
 
   @IsString()
   @IsOptional()
-  @Matches(/^[a-f\d]{24}( [a-f\d]{24})*$/, {
+  @Matches(/^$|^[a-f\d]{24}( [a-f\d]{24})*$/, {
     message: `Partners' ids must be space-separated ObjectIds`,
   })
   partnersIds?: string;

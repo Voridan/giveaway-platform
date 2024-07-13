@@ -10,15 +10,15 @@ import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { ParticipantsSourceDto } from './dto/participants-source.dto';
 import { AddParticipantsDto } from './dto/add-participants.dto';
-import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
 import { ConfigService } from '@nestjs/config';
 import { getDeclineMail } from './util/get-decline-mail';
 import { GiveawayMongooseRepository } from '../repository/giveaway.mongoose-repository';
-import { GiveawayDocument, UserSubdocument } from '@app/common';
-import { Model } from 'mongoose';
+import { GiveawayDocument, UserDocument, UserSubdocument } from '@app/common';
+import { Model, UpdateQuery } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { CollectParticipantsEvent } from '@app/common/events/collect-participants.event';
+import { UserMongooseRepository } from '../repository/user.mongoose-repository';
 
 @Injectable()
 export class GiveawaysService {
@@ -26,15 +26,15 @@ export class GiveawaysService {
     private readonly giveawayRepo: GiveawayMongooseRepository,
     @InjectModel(UserSubdocument.name)
     private readonly userSubdocumentModel: Model<UserSubdocument>,
-    private readonly usersService: UsersService,
+    private readonly usersRepo: UserMongooseRepository,
     private readonly mailService: MailService,
     private readonly config: ConfigService,
     @Inject('participants-microservice')
     private readonly participantsClient: ClientProxy,
   ) {}
 
-  async create(giveawayDto: CreateGiveawayDto, userId: string) {
-    const owner = await this.usersService.findById(userId);
+  async create(userId: string, giveawayDto: CreateGiveawayDto) {
+    const owner = await this.usersRepo.findOne({ _id: userId });
     const createObj: Partial<GiveawayDocument> = {
       title: giveawayDto.title,
       description: giveawayDto.description,
@@ -51,9 +51,15 @@ export class GiveawaysService {
       createObj.participants = participantsArray;
       createObj.participantsCount = participantsArray.length;
     }
+
+    console.log(giveawayDto);
+
+    let partnersDocs: UserDocument[] | null = null;
     if (giveawayDto.partnersIds) {
       const idsArray = giveawayDto.partnersIds.trim().split(' ');
-      const partnersDocs = await this.usersService.findManyById(idsArray);
+      partnersDocs = await this.usersRepo.find({
+        _id: { $in: idsArray },
+      });
       const partners = partnersDocs.map(
         (userDoc) =>
           new this.userSubdocumentModel({
@@ -64,8 +70,77 @@ export class GiveawaysService {
       );
       createObj.partners = partners;
     }
+    console.log(partnersDocs);
 
-    return this.giveawayRepo.create(createObj);
+    // const newGiveaway = await this.giveawayRepo.create(createObj);
+
+    // await this.usersRepo.updateOne(
+    //   { _id: owner._id },
+    //   {
+    //     $push: { ownGiveaways: newGiveaway._id },
+    //   },
+    // );
+    // if (partnersDocs && partnersDocs.length > 0) {
+    //   await this.usersRepo.updateMany(
+    //     {
+    //       _id: { $in: partnersDocs.map((user) => user._id) },
+    //     },
+    //     {
+    //       $push: { partneredGiveaways: newGiveaway._id },
+    //     },
+    //   );
+    // }
+
+    return {};
+  }
+
+  async update(_id: string, body: UpdateGiveawayDto) {
+    const toUpdate = await this.giveawayRepo.findOne({ _id });
+    const { title, description, participants, partnersIds, postUrl } = body;
+    const idsArray = partnersIds ? partnersIds.trim().split(' ') : null;
+
+    const updateQuery: UpdateQuery<GiveawayDocument> = {
+      title,
+      description,
+      postUrl,
+    };
+
+    const oldPartnersIds = toUpdate.partners.map((partner) => partner.userId);
+    const difference = new Set(oldPartnersIds);
+    for (const pId of idsArray) {
+      difference.delete(pId);
+    }
+    await this.usersRepo.updateMany(
+      { _id: { $in: [...difference] } },
+      { $pull: { partneredGiveaways: toUpdate._id } },
+    );
+
+    if (idsArray) {
+      const newPartnerDocuments = await this.usersRepo.find({
+        _id: { $in: idsArray },
+      });
+
+      const partnerSubDocuments = newPartnerDocuments?.map(
+        (userDoc) =>
+          new this.userSubdocumentModel({
+            userId: userDoc._id,
+            email: userDoc.email,
+            userName: userDoc.userName,
+          }),
+      );
+
+      const participantsArr = [
+        ...new Set([
+          ...participants?.trim().split(' '),
+          ...toUpdate.participants,
+        ]),
+      ];
+      updateQuery.partners = partnerSubDocuments;
+      updateQuery.$inc = { participantsCount: participantsArr.length };
+      updateQuery.$push = { participants: { $each: participantsArr } };
+    }
+
+    return this.giveawayRepo.findOneAndUpdate({ _id }, updateQuery);
   }
 
   async moderateApprove(_id: string) {
@@ -110,41 +185,35 @@ export class GiveawaysService {
     return giveaway;
   }
 
-  async update(_id: string, body: UpdateGiveawayDto) {
-    const { title, description, participants, partnersIds, postUrl } = body;
-    const partnerDocuments = await this.usersService.findManyById(
-      partnersIds?.trim().split(' '),
-    );
-
-    const partnerSubDocuments = partnerDocuments?.map(
-      (userDoc) =>
-        new this.userSubdocumentModel({
-          userId: userDoc._id,
-          email: userDoc.email,
-          userName: userDoc.userName,
-        }),
-    );
-
-    const participantsArr = [...new Set(participants?.trim().split(' '))];
-
-    return this.giveawayRepo.findOneAndUpdate(
-      { _id },
-      {
-        title,
-        description,
-        partners: partnerSubDocuments,
-        postUrl,
-        $inc: { participantsCount: participantsArr.length },
-        $push: { participants: participantsArr },
-      },
-    );
-  }
-
   async end(_id: string) {
     return this.giveawayRepo.findOneAndUpdate({ _id }, { ended: true });
   }
 
   async remove(_id: string) {
+    const toRemove = await this.giveawayRepo.findOne({ _id });
+    if (!toRemove) {
+      throw new BadRequestException('invalid id');
+    }
+    await this.usersRepo.updateOne(
+      {
+        _id: toRemove.owner.userId,
+      },
+      {
+        $pull: {
+          ownGiveaways: toRemove._id,
+        },
+      },
+    );
+    await this.usersRepo.updateMany(
+      {
+        _id: { $in: toRemove.partners.map((p) => p.userId) },
+      },
+      {
+        $pull: {
+          partneredGiveaways: toRemove._id,
+        },
+      },
+    );
     return this.giveawayRepo.deleteOne({ _id });
   }
 
@@ -184,7 +253,7 @@ export class GiveawaysService {
     return this.giveawayRepo.findOneAndUpdate(
       { _id },
       {
-        $push: { participants },
+        $push: { participants: { $each: participants } },
         $inc: { participantsCount: participants.length },
       },
     );
@@ -202,46 +271,21 @@ export class GiveawaysService {
     }
   }
 
-  // async getPartneredPaginatedGiveaways(
-  //   partnerId: number,
-  //   offset: number,
-  //   limit: number,
-  //   next: boolean,
-  //   lastItemId: number,
-  //   relations: string[] = [],
-  // ) {
-  //   if (lastItemId !== undefined) {
-  //     const item = await this.giveawayRepo.findOne({ id: lastItemId });
-  //     if (!item) {
-  //       throw new NotFoundException('Last item id is invalid.');
-  //     }
-  //   }
-
-  //   const offset = (page - 1) * limit;
-  //   return this.giveawayRepo.getPartneredGiveaways(
-  //     partnerId,
-  //     offset,
-  //     limit,
-  //     lastItemId,
-  //     [],
-  //   );
-  // }
+  async getPartneredPaginatedGiveaways(
+    partnerId: string,
+    offset: number,
+    limit: number,
+  ) {
+    return this.usersRepo.getPartneredGiveaways(partnerId, offset, limit);
+  }
 
   async getOwnPaginatedGiveaways(
     userId: string,
     offset: number,
     limit: number,
-    next: boolean,
-    lastItemId: string,
   ) {
     try {
-      return this.giveawayRepo.getOwnGiveaways(
-        userId,
-        offset,
-        limit,
-        next,
-        lastItemId,
-      );
+      return this.usersRepo.getOwnGiveaways(userId, offset, limit);
     } catch (error) {
       throw new BadRequestException(error.message);
     }

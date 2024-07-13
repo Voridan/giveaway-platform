@@ -34,7 +34,7 @@ export class UserDocument extends AbstractDocument {
   @Prop({
     type: [{ type: SchemaTypes.ObjectId, ref: 'GiveawayDocument' }],
   })
-  giveaways: GiveawayDocument[];
+  partneredGiveaways: GiveawayDocument[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserDocument);

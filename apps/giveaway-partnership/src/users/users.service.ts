@@ -19,14 +19,6 @@ export class UsersService {
     }
   }
 
-  findManyById(ids: string[]) {
-    try {
-      return this.repo.find({ _id: { $in: ids } });
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
-
   findByEmail(email: string) {
     return this.repo.findOne({ email });
   }

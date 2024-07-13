@@ -55,28 +55,40 @@ export class GiveawayMongooseRepository extends GenericMongooseRepository<Giveaw
     if (lastItemId) filter['_id'] = { $gt: new Types.ObjectId(lastItemId) };
 
     const [result] = await this.model.aggregate([
-      { $match: filter },
-      { $sort: { _id: 1 } },
       {
         $facet: {
-          giveaways: [{ $limit: limit }],
+          giveaways: [
+            { $match: filter },
+            { $sort: { _id: 1 } },
+            { $limit: limit },
+          ],
           totalCount: [{ $count: 'count' }],
         },
       },
     ]);
 
-    return [result.giveaways, result.totalCount];
+    return [result.giveaways, result.totalCount[0].count];
   }
 
-  getOwnGiveaways(
-    userId: string,
-    offset: number,
-    limit: number,
-    next: boolean,
-    lastItemId: string,
-  ) {
-    const filter: FilterQuery<GiveawayDocument> = { 'owner.userId': userId };
-    if (next) {
-    }
+  async getOwnGiveaways(userId: string, offset: number, limit: number) {
+    const filter: FilterQuery<GiveawayDocument> = {
+      'owner.userId': new Types.ObjectId(userId),
+    };
+
+    const [result] = await this.model.aggregate([
+      {
+        $facet: {
+          giveaways: [
+            { $match: filter },
+            { $sort: { _id: 1 } },
+            { $skip: offset },
+            { $limit: limit },
+          ],
+          totalCount: [{ $count: 'count' }],
+        },
+      },
+    ]);
+
+    return [result.giveaways, result.totalCount[0].count];
   }
 }

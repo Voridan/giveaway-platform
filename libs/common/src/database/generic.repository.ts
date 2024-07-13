@@ -61,6 +61,13 @@ export abstract class GenericMongooseRepository<
     return this.model.updateOne(filterQuery, update).lean<TDocument>(true);
   }
 
+  async updateMany(
+    filterQuery: FilterQuery<TDocument>,
+    update: UpdateQuery<TDocument>,
+  ) {
+    return this.model.updateMany(filterQuery, update).lean<TDocument>(true);
+  }
+
   async deleteOne(filterQuery: FilterQuery<TDocument>) {
     return this.model.deleteOne(filterQuery).lean<TDocument>(true);
   }
