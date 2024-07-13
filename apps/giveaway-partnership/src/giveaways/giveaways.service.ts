@@ -52,8 +52,6 @@ export class GiveawaysService {
       createObj.participantsCount = participantsArray.length;
     }
 
-    console.log(giveawayDto);
-
     let partnersDocs: UserDocument[] | null = null;
     if (giveawayDto.partnersIds) {
       const idsArray = giveawayDto.partnersIds.trim().split(' ');
@@ -70,28 +68,27 @@ export class GiveawaysService {
       );
       createObj.partners = partners;
     }
-    console.log(partnersDocs);
 
-    // const newGiveaway = await this.giveawayRepo.create(createObj);
+    const newGiveaway = await this.giveawayRepo.create(createObj);
 
-    // await this.usersRepo.updateOne(
-    //   { _id: owner._id },
-    //   {
-    //     $push: { ownGiveaways: newGiveaway._id },
-    //   },
-    // );
-    // if (partnersDocs && partnersDocs.length > 0) {
-    //   await this.usersRepo.updateMany(
-    //     {
-    //       _id: { $in: partnersDocs.map((user) => user._id) },
-    //     },
-    //     {
-    //       $push: { partneredGiveaways: newGiveaway._id },
-    //     },
-    //   );
-    // }
+    await this.usersRepo.updateOne(
+      { _id: owner._id },
+      {
+        $push: { ownGiveaways: newGiveaway._id },
+      },
+    );
+    if (partnersDocs && partnersDocs.length > 0) {
+      await this.usersRepo.updateMany(
+        {
+          _id: { $in: partnersDocs.map((user) => user._id) },
+        },
+        {
+          $push: { partneredGiveaways: newGiveaway._id },
+        },
+      );
+    }
 
-    return {};
+    return newGiveaway;
   }
 
   async update(_id: string, body: UpdateGiveawayDto) {
@@ -107,8 +104,10 @@ export class GiveawaysService {
 
     const oldPartnersIds = toUpdate.partners.map((partner) => partner.userId);
     const difference = new Set(oldPartnersIds);
-    for (const pId of idsArray) {
-      difference.delete(pId);
+    if (idsArray) {
+      for (const pId of idsArray) {
+        difference.delete(pId);
+      }
     }
     await this.usersRepo.updateMany(
       { _id: { $in: [...difference] } },
