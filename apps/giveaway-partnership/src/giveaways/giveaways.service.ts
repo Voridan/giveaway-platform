@@ -11,10 +11,9 @@ import { CreateGiveawayDto } from './dto/create-giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
 import { GiveawayResultDto } from './dto/giveaway-result.dto';
 import { GiveawayTypeOrmRepository } from '../repository/giveaway.typeorm-repository';
-import { Giveaway, Participant } from '@app/common';
+import { CollectParticipantsEvent, Giveaway, Participant } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ParticipantsSourceDto } from './dto/participants-source.dto';
-import { CollectCommentsEvent } from './events/collect-comments.event';
 import { AddParticipantsDto } from './dto/add-participants.dto';
 import { UsersService } from '../users/users.service';
 import { FindOptionsRelations } from 'typeorm';
@@ -219,7 +218,7 @@ export class GiveawaysService implements OnModuleInit {
 
     this.participantsClient.emit(
       'collect-comments',
-      new CollectCommentsEvent(giveaway, participantsSourceDto.postUrl),
+      new CollectParticipantsEvent(giveaway.id, participantsSourceDto.postUrl),
     );
   }
 

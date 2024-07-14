@@ -186,8 +186,6 @@ export class GiveawaysController {
     @CurrentUser('sub') userId: number,
     @Body() participantsSourceDto: ParticipantsSourceDto,
   ) {
-    console.log(participantsSourceDto);
-
     this.giveawaysService.collectParticipants(participantsSourceDto, userId);
   }
 
