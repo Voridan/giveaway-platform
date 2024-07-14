@@ -1,8 +1,8 @@
 import { CollectParticipantsEvent, Participant } from '@app/common';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GiveawayTypeOrmRepository } from 'apps/giveaway-partnership/src/repository/giveaway.typeorm-repository';
 import * as ref from 'instagram-id-to-url-segment';
+import { GiveawayTypeOrmRepository } from './repository/giveaway.typeorm-repository';
 
 @Injectable()
 export class ParticipantsCollectorService {
