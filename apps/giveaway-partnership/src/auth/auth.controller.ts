@@ -50,8 +50,8 @@ export class AuthController {
     return { user, accessToken: tokens.accessToken };
   }
 
-  @PublicRoute()
   @Post('/local/login')
+  @PublicRoute()
   @Serialize(AuthResponseDto)
   async loginLocal(
     @Body() loginUserDto: LoginUserDto,

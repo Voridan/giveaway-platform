@@ -125,9 +125,7 @@ export class GiveawaysService implements OnModuleInit {
       { id },
       { partners: true },
     );
-    giveaway.partners = giveaway.partners.filter(
-      (partner) => partner.id !== giveaway.ownerId,
-    );
+
     return giveaway;
   }
 
@@ -141,7 +139,9 @@ export class GiveawaysService implements OnModuleInit {
     relationsToUpdate.partners = !!partnersIds;
 
     let updated: Giveaway;
-    if (Object.keys(updateObj).length !== 0) {
+    if (Object.values(updateObj).some((value) => value !== undefined)) {
+      console.log('updating', updateObj);
+
       updated = await this.giveawayRepo.findOneAndUpdate(
         { id },
         updateObj,
@@ -155,7 +155,6 @@ export class GiveawaysService implements OnModuleInit {
       const participantsEntity = this.mapParticipantsToEntity(participants);
       updated.participants.push(...participantsEntity);
       updated.participantsCount += participantsEntity.length;
-      updated = await this.giveawayRepo.save(updated);
     }
 
     if (relationsToUpdate.partners) {
@@ -163,7 +162,6 @@ export class GiveawaysService implements OnModuleInit {
       try {
         const partners = await this.usersService.findManyById(ids);
         updated.partners = partners;
-        updated = await this.giveawayRepo.save(updated);
       } catch (error) {
         throw new HttpException(
           'Error when getting partners. ' + error.message,
@@ -172,7 +170,7 @@ export class GiveawaysService implements OnModuleInit {
       }
     }
 
-    return updated;
+    return this.giveawayRepo.save(updated);
   }
 
   async end(id: number) {
@@ -234,11 +232,7 @@ export class GiveawaysService implements OnModuleInit {
     return this.giveawayRepo.searchGiveaways(query);
   }
 
-  async getUnmoderatedGiveaways(
-    limit: number,
-    lastItemId: number,
-    relations: string[] = [],
-  ) {
+  async getUnmoderatedGiveaways(limit: number, lastItemId: number) {
     if (lastItemId !== undefined && lastItemId > 0) {
       const item = await this.giveawayRepo.findOne({ id: lastItemId });
       if (!item) {
@@ -246,45 +240,23 @@ export class GiveawaysService implements OnModuleInit {
       }
     }
 
-    return this.giveawayRepo.getUnmoderatedByLastId(
-      limit,
-      lastItemId,
-      relations,
-    );
+    return this.giveawayRepo.getUnmoderatedByLastId(limit, lastItemId);
   }
 
-  // async getPartneredPaginatedGiveaways(
-  //   partnerId: number,
-  //   offset: number,
-  //   limit: number,
-  //   next: boolean,
-  //   lastItemId: number,
-  //   relations: string[] = [],
-  // ) {
-  //   if (lastItemId !== undefined) {
-  //     const item = await this.giveawayRepo.findOne({ id: lastItemId });
-  //     if (!item) {
-  //       throw new NotFoundException('Last item id is invalid.');
-  //     }
-  //   }
-
-  //   const offset = (page - 1) * limit;
-  //   return this.giveawayRepo.getPartneredGiveaways(
-  //     partnerId,
-  //     offset,
-  //     limit,
-  //     lastItemId,
-  //     [],
-  //   );
-  // }
+  async getPartneredPaginatedGiveaways(
+    partnerId: number,
+    offset: number,
+    limit: number,
+  ) {
+    return this.giveawayRepo.getPartneredGiveaways(partnerId, offset, limit);
+  }
 
   async getOwnPaginatedGiveaways(
     userId: number,
     offset: number,
     limit: number,
-    relations: string[] = [],
   ) {
-    return this.giveawayRepo.getOwnGiveaways(userId, offset, limit, relations);
+    return this.giveawayRepo.getOwnGiveaways(userId, offset, limit);
   }
 
   private mapParticipantsToEntity(participantsStr: string) {
