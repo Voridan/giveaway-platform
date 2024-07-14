@@ -1,10 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "src",
+  "sourceRoot": "apps/giveaway-partnership/src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "webpack": true
+    "webpack": true,
+    "tsConfigPath": "apps/giveaway-partnership/tsconfig.app.json"
   },
   "projects": {
     "common": {
@@ -15,6 +16,26 @@
       "compilerOptions": {
         "tsConfigPath": "libs/common/tsconfig.lib.json"
       }
+    },
+    "giveaway-partnership": {
+      "type": "application",
+      "root": "apps/giveaway-partnership",
+      "entryFile": "main",
+      "sourceRoot": "apps/giveaway-partnership/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/giveaway-partnership/tsconfig.app.json"
+      }
+    },
+    "participants-collector": {
+      "type": "application",
+      "root": "apps/participants-collector",
+      "entryFile": "main",
+      "sourceRoot": "apps/participants-collector/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/participants-collector/tsconfig.app.json"
+      }
     }
-  }
+  },
+  "monorepo": true,
+  "root": "apps/giveaway-partnership"
 }

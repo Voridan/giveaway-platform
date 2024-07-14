@@ -1,3 +1,3 @@
+export * from './entities';
 export * from './database.module';
-export * from './typeorm';
-export * from './mongoose';
+export * from './generic.repository';
