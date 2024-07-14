@@ -17,7 +17,7 @@ export class GiveawayTypeOrmRepository extends GenericTypeOrmRepository<Giveaway
     const queryBuilder = this.entityRepository
       .createQueryBuilder('giveaway')
       .innerJoinAndSelect('giveaway.owner', 'user')
-      .where('giveaway.title ILIKE :title', { title: `%${query}%` })
+      .where('giveaway.document @@ plainto_tsquery(:query)', { query })
       .orWhere('user.userName ILIKE :username', { username: `%${query}%` });
 
     const id = parseInt(query);

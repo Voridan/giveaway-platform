@@ -140,8 +140,6 @@ export class GiveawaysService implements OnModuleInit {
 
     let updated: Giveaway;
     if (Object.values(updateObj).some((value) => value !== undefined)) {
-      console.log('updating', updateObj);
-
       updated = await this.giveawayRepo.findOneAndUpdate(
         { id },
         updateObj,
@@ -158,9 +156,9 @@ export class GiveawaysService implements OnModuleInit {
     }
 
     if (relationsToUpdate.partners) {
-      const ids = partnersIds.trim().split(' ').map(Number);
+      const idsArray = partnersIds.trim().split(' ').map(Number);
       try {
-        const partners = await this.usersService.findManyById(ids);
+        const partners = await this.usersService.findManyById(idsArray);
         updated.partners = partners;
       } catch (error) {
         throw new HttpException(
