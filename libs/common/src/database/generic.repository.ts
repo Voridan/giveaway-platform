@@ -51,6 +51,18 @@ export abstract class GenericTypeOrmRepository<T extends AbstractEntity<T>> {
     return this.findOne(where, relations);
   }
 
+  async update(
+    where: FindOptionsWhere<T>,
+    partialEntity: QueryDeepPartialEntity<T>,
+  ): Promise<boolean> {
+    const updateResult = await this.entityRepository.update(
+      where,
+      partialEntity,
+    );
+
+    return !!updateResult.affected;
+  }
+
   async find(
     where: FindOptionsWhere<T>,
     relations?: FindOptionsRelations<T>,

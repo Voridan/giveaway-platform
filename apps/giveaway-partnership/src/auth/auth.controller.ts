@@ -59,7 +59,7 @@ export class AuthController {
   ) {
     const { user, tokens } = await this.authService.loginLocal(loginUserDto);
     this.attachTokenToCookie(res, tokens.refreshToken);
-    return { ...user, accessToken: tokens.accessToken };
+    return { user, accessToken: tokens.accessToken };
   }
 
   @Get('/logout')
@@ -67,7 +67,7 @@ export class AuthController {
     @CurrentUser('sub') userId: number,
     @Res({ passthrough: true }) res: Response,
   ) {
-    this.dettachTokenToCookie(res);
+    this.dettachTokenFromCookie(res);
     return this.authService.logout(userId);
   }
 
@@ -107,6 +107,7 @@ export class AuthController {
   }
 
   @Post('/reset-password')
+  @Serialize(AuthResponseDto)
   async resetPassword(
     @CurrentUser() user: JwtPayload,
     @Body() resetPasswordDto: ResetPasswordDto,
@@ -122,7 +123,7 @@ export class AuthController {
     });
   }
 
-  private dettachTokenToCookie(res: Response) {
+  private dettachTokenFromCookie(res: Response) {
     res.clearCookie('jwt', {
       httpOnly: true,
       secure: true,

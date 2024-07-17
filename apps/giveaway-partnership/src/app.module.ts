@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -10,6 +10,7 @@ import { ConfigModule } from '@app/common/config/config.module';
 import { DatabaseModule } from '@app/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AccessGuard } from './guards';
+import * as cookieParser from 'cookie-parser';
 
 @Module({
   imports: [
@@ -29,4 +30,8 @@ import { AccessGuard } from './guards';
     AppService,
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(cookieParser()).forRoutes('*');
+  }
+}

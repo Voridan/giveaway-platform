@@ -11,13 +11,13 @@ import { AbstractEntity } from './abstract.entity';
 
 @Entity({ name: 'user' })
 export class User extends AbstractEntity<User> {
-  @Column()
+  @Column({ unique: true })
   userName: string;
 
   @Column()
   password: string;
 
-  @Column()
+  @Column({ unique: true })
   email: string;
 
   @Column({ default: false })

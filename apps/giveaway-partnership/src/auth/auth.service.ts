@@ -6,11 +6,10 @@ import {
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
-import { PasswordService } from '../users/pasword.service';
+import { PasswordService } from './pasword.service';
 import { LoginUserDto } from '../users/dto/login-user.dto';
 import { randomBytes } from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { UserTypeOrmRepository } from '../repository/user.typeorm-repository';
 import { Tokens } from './types';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -23,7 +22,6 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly usersRepo: UserTypeOrmRepository,
   ) {}
 
   async signupLocal(createUser: CreateUserDto) {
@@ -48,7 +46,7 @@ export class AuthService {
     const user = await this.usersService.findByEmail(dto.email);
 
     if (!user) {
-      throw new ForbiddenException('Access denied.');
+      throw new ForbiddenException('Invalid email.');
     }
 
     const passwordMatch = await this.passwordService.compare(
@@ -66,7 +64,7 @@ export class AuthService {
   }
 
   logout(userId: number) {
-    return this.usersRepo.findOneAndUpdate(
+    return this.usersService.update(
       { id: userId, jwtRefreshTokenHash: Not(IsNull()) },
       { jwtRefreshTokenHash: null },
     );
@@ -121,14 +119,16 @@ export class AuthService {
 
   private async updateRefreshTokenHash(userId: number, rt: string) {
     const hash = await this.passwordService.hash(rt);
-    await this.usersService.update(userId, {
-      jwtRefreshTokenHash: hash,
-    });
+    await this.usersService.update(
+      { id: userId },
+      {
+        jwtRefreshTokenHash: hash,
+      },
+    );
   }
 
   async generateResetPasswordTokenAndSave(email: string) {
-    const user = await this.usersRepo.findOne({ email });
-    console.log(user);
+    const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new NotFoundException('User with that email does not exists');
     }
@@ -147,16 +147,13 @@ export class AuthService {
     const FIVE_MINS = 5 * 60 * 1000;
 
     user.resetPasswordExpires = new Date(Date.now() + FIVE_MINS);
-    await this.usersService.update(user.id, user);
+    await this.usersService.update({ id: user.id }, user);
 
     return secret;
   }
 
   async resetPassword(id: number, resetPasswordDto: ResetPasswordDto) {
-    const user = await this.usersRepo.findOne({ id }, undefined, {
-      resetPasswordExpires: true,
-      resetPasswordToken: true,
-    });
+    const user = await this.usersService.findById(id);
 
     if (!user) {
       throw new NotFoundException('user not found');
@@ -192,7 +189,8 @@ export class AuthService {
     user.password = newPasswordHash;
     user.resetPasswordExpires = null;
     user.resetPasswordToken = null;
-
-    return this.usersRepo.save(user);
+    const tokens = await this.getTokens(user.id, user.isAdmin, user.email);
+    await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
+    return this.usersService.update({ id }, user);
   }
 }

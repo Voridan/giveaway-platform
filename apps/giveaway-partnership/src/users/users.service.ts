@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { User } from '@app/common/database/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserTypeOrmRepository } from '../repository/user.typeorm-repository';
-import { In } from 'typeorm';
+import { FindOptionsWhere, In } from 'typeorm';
 
 @Injectable()
 export class UsersService {
@@ -15,7 +15,7 @@ export class UsersService {
 
   findById(id: number) {
     try {
-      return this.repo.findOne({ id }, { ownGiveaways: true });
+      return this.repo.findOne({ id });
     } catch (error) {
       throw new Error(error);
     }
@@ -41,8 +41,8 @@ export class UsersService {
     return this.repo.find({});
   }
 
-  async update(id: number, attrs: Partial<User>) {
-    return this.repo.findOneAndUpdate({ id }, attrs);
+  async update(where: FindOptionsWhere<User>, attrs: Partial<User>) {
+    return this.repo.findOneAndUpdate(where, attrs);
   }
 
   async remove(id: number) {
