@@ -1,7 +1,6 @@
 import { getApproveMail } from './util/get-approve-mail';
 import {
   BadRequestException,
-  HttpException,
   Inject,
   Injectable,
   NotFoundException,
@@ -49,35 +48,27 @@ export class GiveawaysService implements OnModuleInit {
 
   async create(giveawayDto: CreateGiveawayDto, userId: number) {
     const owner = await this.usersService.findById(userId);
+    if (!owner) {
+      throw new BadRequestException('Owner not found.');
+    }
     const { title, description, postUrl, participants, partnerIds } =
       giveawayDto;
 
     const giveaway = new Giveaway({ owner, title, description, postUrl });
 
     if (participants) {
-      try {
-        const participantsEntity = this.mapParticipantsToEntity(participants);
-        giveaway.participantsCount = participantsEntity.length;
-        giveaway.participants = participantsEntity;
-      } catch (error) {
-        throw new HttpException(
-          'Error when saving to the DB. ' + error.message,
-          500,
-        );
-      }
+      const participantsEntity = this.mapParticipantsToEntity(participants);
+      giveaway.participantsCount = participantsEntity.length;
+      giveaway.participants = participantsEntity;
     }
 
     if (partnerIds) {
       const ids = partnerIds.trim().split(' ').map(Number);
-      try {
-        const partners = await this.usersService.findManyById(ids);
-        giveaway.partners = partners;
-      } catch (error) {
-        throw new HttpException(
-          'Error when getting partners. ' + error.message,
-          500,
-        );
+      const partners = await this.usersService.findManyById(ids);
+      if (partners.length === 0) {
+        throw new BadRequestException("Invalid partners' ids");
       }
+      giveaway.partners = partners;
     }
 
     return this.giveawayRepo.save(giveaway);
@@ -157,15 +148,11 @@ export class GiveawaysService implements OnModuleInit {
 
     if (relationsToUpdate.partners) {
       const idsArray = partnersIds.trim().split(' ').map(Number);
-      try {
-        const partners = await this.usersService.findManyById(idsArray);
-        updated.partners = partners;
-      } catch (error) {
-        throw new HttpException(
-          'Error when getting partners. ' + error.message,
-          500,
-        );
+      const partners = await this.usersService.findManyById(idsArray);
+      if (partners.length === 0) {
+        throw new BadRequestException("Invalid partners' ids");
       }
+      updated.partners = partners;
     }
 
     return this.giveawayRepo.save(updated);
@@ -220,6 +207,9 @@ export class GiveawaysService implements OnModuleInit {
 
   async addParticipants(id: number, addParticipantsDto: AddParticipantsDto) {
     const giveaway = await this.giveawayRepo.findOne({ id });
+    if (!giveaway) {
+      throw new BadRequestException('Giveaway not found');
+    }
     const participants = this.mapParticipantsToEntity(addParticipantsDto.data);
     giveaway.participants.push(...participants);
     giveaway.participantsCount += participants.length;
@@ -234,7 +224,7 @@ export class GiveawaysService implements OnModuleInit {
     if (lastItemId !== undefined && lastItemId > 0) {
       const item = await this.giveawayRepo.findOne({ id: lastItemId });
       if (!item) {
-        throw new NotFoundException('Last item id is invalid.');
+        throw new BadRequestException('Last item id is invalid.');
       }
     }
 
@@ -257,7 +247,7 @@ export class GiveawaysService implements OnModuleInit {
     return this.giveawayRepo.getOwnGiveaways(userId, offset, limit);
   }
 
-  private mapParticipantsToEntity(participantsStr: string) {
+  mapParticipantsToEntity(participantsStr: string) {
     const participants = participantsStr.trim().split(' ');
     return participants.map((nickname) => new Participant({ nickname }));
   }

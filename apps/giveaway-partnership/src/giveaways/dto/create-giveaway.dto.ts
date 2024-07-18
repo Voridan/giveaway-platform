@@ -6,20 +6,20 @@ export class CreateGiveawayDto {
 
   @IsOptional()
   @IsString()
-  description: string | undefined;
+  description?: string | undefined;
 
   @IsOptional()
   @IsString()
-  participants: string | undefined;
+  participants?: string | undefined;
 
   @IsOptional()
   @IsUrl()
-  postUrl: string | undefined;
+  postUrl?: string | undefined;
 
   @IsOptional()
   @IsString()
   @Matches(/^\d+( \d+)*$/, {
     message: `Partners' ids must be space-separated number IDs`,
   })
-  partnerIds: string | undefined;
+  partnerIds?: string | undefined;
 }

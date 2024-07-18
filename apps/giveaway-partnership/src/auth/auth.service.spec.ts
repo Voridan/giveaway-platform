@@ -338,7 +338,7 @@ describe('AuthService', () => {
   });
 
   describe('resetPassword', () => {
-    it('should throw NotFoundException if user is not found', async () => {
+    it('should throw BadRequestException if user is not found', async () => {
       mockUsersService.findById.mockResolvedValue(null);
 
       expect(

@@ -22,11 +22,7 @@ export class UsersService {
   }
 
   findManyById(ids: number[]) {
-    try {
-      return this.repo.find({ id: In(ids) });
-    } catch (error) {
-      throw new Error(error);
-    }
+    return this.repo.find({ id: In(ids) });
   }
 
   findByEmail(email: string) {
