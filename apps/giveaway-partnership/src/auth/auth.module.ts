@@ -9,7 +9,7 @@ import { AccessStrategy, RefreshStrategy } from './strategies';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from '@app/common';
-import { PasswordService } from './pasword.service';
+import { PasswordService } from './password.service';
 
 @Module({
   imports: [

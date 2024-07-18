@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { PasswordService } from './pasword.service';
+import { PasswordService } from './password.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { User } from '@app/common';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
