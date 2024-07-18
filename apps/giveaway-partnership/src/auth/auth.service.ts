@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -39,14 +38,14 @@ export class AuthService {
       newUser.email,
     );
     await this.updateRefreshTokenHash(newUser.id, tokens.refreshToken);
-    return { user, tokens };
+    return { user: newUser, tokens };
   }
 
   async loginLocal(dto: LoginUserDto) {
     const user = await this.usersService.findByEmail(dto.email);
 
     if (!user) {
-      throw new ForbiddenException('Invalid email.');
+      throw new BadRequestException('Invalid email.');
     }
 
     const passwordMatch = await this.passwordService.compare(
@@ -55,7 +54,7 @@ export class AuthService {
     );
 
     if (!passwordMatch) {
-      throw new ForbiddenException('Access denied.');
+      throw new BadRequestException('Wrong password.');
     }
 
     const tokens = await this.getTokens(user.id, user.isAdmin, user.email);
@@ -76,7 +75,7 @@ export class AuthService {
       throw new ForbiddenException('Access denied.');
     }
 
-    const rtMatches = this.passwordService.compare(
+    const rtMatches = await this.passwordService.compare(
       user.jwtRefreshTokenHash,
       rt,
     );
@@ -90,7 +89,7 @@ export class AuthService {
     return { user, tokens };
   }
 
-  private async getTokens(
+  async getTokens(
     userId: number,
     admin: boolean,
     email: string,
@@ -117,7 +116,7 @@ export class AuthService {
     return { accessToken: at, refreshToken: rt };
   }
 
-  private async updateRefreshTokenHash(userId: number, rt: string) {
+  async updateRefreshTokenHash(userId: number, rt: string) {
     const hash = await this.passwordService.hash(rt);
     await this.usersService.update(
       { id: userId },
@@ -130,7 +129,7 @@ export class AuthService {
   async generateResetPasswordTokenAndSave(email: string) {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
-      throw new NotFoundException('User with that email does not exists');
+      throw new BadRequestException('User with that email does not exists');
     }
 
     if (
@@ -156,12 +155,12 @@ export class AuthService {
     const user = await this.usersService.findById(id);
 
     if (!user) {
-      throw new NotFoundException('user not found');
+      throw new BadRequestException('User not found');
     }
 
     const isExpired = new Date(user.resetPasswordExpires) < new Date();
     if (isExpired) {
-      throw new BadRequestException('reset token expired');
+      throw new BadRequestException('Reset token expired');
     }
 
     const { newPassword, oldPassword, secret } = resetPasswordDto;
@@ -177,7 +176,7 @@ export class AuthService {
     );
 
     if (!isSecretValid) {
-      throw new BadRequestException('secret token is invalid');
+      throw new BadRequestException('Secret token is invalid');
     }
 
     if (!passwordMatch) {
