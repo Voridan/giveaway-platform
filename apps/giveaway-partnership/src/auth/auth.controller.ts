@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Post,
   Query,
   Res,
@@ -45,13 +46,18 @@ export class AuthController {
       else throw new BadRequestException('Wrong secret');
     }
 
-    const { user, tokens } = await this.authService.signupLocal(body);
-    this.attachTokenToCookie(res, tokens.refreshToken);
-    return { user, accessToken: tokens.accessToken };
+    try {
+      const { user, tokens } = await this.authService.signupLocal(body);
+      this.attachTokenToCookie(res, tokens.refreshToken);
+      return { ...user, accessToken: tokens.accessToken };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   @Post('/local/login')
   @PublicRoute()
+  @HttpCode(200)
   @Serialize(AuthResponseDto)
   async loginLocal(
     @Body() loginUserDto: LoginUserDto,
@@ -59,7 +65,7 @@ export class AuthController {
   ) {
     const { user, tokens } = await this.authService.loginLocal(loginUserDto);
     this.attachTokenToCookie(res, tokens.refreshToken);
-    return { user, accessToken: tokens.accessToken };
+    return { ...user, accessToken: tokens.accessToken };
   }
 
   @Get('/logout')
@@ -88,6 +94,7 @@ export class AuthController {
   }
 
   @Post('/forgot-password')
+  @HttpCode(200)
   async forgotPassword(@CurrentUser() user: JwtPayload) {
     const secret = await this.authService.generateResetPasswordTokenAndSave(
       user.email,

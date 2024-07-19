@@ -4,12 +4,11 @@ import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { User } from '@app/common/database/entities/user.entity';
 import { MailModule } from '../mail/mail.module';
-
 import { AccessStrategy, RefreshStrategy } from './strategies';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from '@app/common';
 import { PasswordService } from './password.service';
+import { ConfigModule } from '@app/common/config/config.module';
 
 @Module({
   imports: [

@@ -24,11 +24,6 @@ export class AuthService {
   ) {}
 
   async signupLocal(createUser: CreateUserDto) {
-    const user = await this.usersService.findByEmail(createUser.email);
-    if (user !== null) {
-      throw new BadRequestException('Email is taken.');
-    }
-
     const hashedPassword = await this.passwordService.hash(createUser.password);
     createUser.password = hashedPassword;
     const newUser = await this.usersService.create(createUser);
