@@ -12,6 +12,18 @@ export class GiveawayMongooseRepository extends GenericMongooseRepository<Giveaw
     super(giveawayModel);
   }
 
+  getResults(filterQuery: FilterQuery<GiveawayDocument>) {
+    return this.model
+      .findOne(filterQuery)
+      .select({
+        _id: 0,
+        participants: 1,
+        winner: 1,
+      })
+      .lean()
+      .exec();
+  }
+
   searchGiveaways(query: string) {
     return this.model.aggregate([
       {

@@ -39,7 +39,7 @@ export class GiveawaysController {
     return this.giveawaysService.create(userId, body);
   }
 
-  @Post('/:id/end')
+  @Patch('/:id/end')
   @Serialize(GiveawayDto)
   async endGiveaway(@Param('id') id: string) {
     const giveaway = await this.giveawaysService.end(id);
@@ -53,7 +53,7 @@ export class GiveawaysController {
   }
 
   @Get()
-  // @UseGuards(AdminGuard)
+  @UseGuards(AdminGuard)
   @PublicRoute()
   @Serialize(GiveawayBaseDto)
   async getPaginatediveaways(

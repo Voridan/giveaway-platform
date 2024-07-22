@@ -128,16 +128,17 @@ export class GiveawaysService {
           }),
       );
 
-      const participantsArr = [
-        ...new Set([
-          ...participants?.trim().split(' '),
-          ...toUpdate.participants,
-        ]),
-      ];
       updateQuery.partners = partnerSubDocuments;
-      updateQuery.$inc = { participantsCount: participantsArr.length };
-      updateQuery.$push = { participants: { $each: participantsArr } };
     }
+
+    const participantsArr = [
+      ...new Set([
+        ...participants?.trim().split(' '),
+        ...toUpdate.participants,
+      ]),
+    ];
+    updateQuery.$inc = { participantsCount: participantsArr.length };
+    updateQuery.$push = { participants: { $each: participantsArr } };
 
     return this.giveawayRepo.findOneAndUpdate({ _id }, updateQuery);
   }
@@ -217,8 +218,12 @@ export class GiveawaysService {
   }
 
   async getResult(_id: string) {
-    const giveaway = await this.giveawayRepo.findOne({ _id });
-    return { winner: giveaway.winner, participants: giveaway.participants };
+    const results = await this.giveawayRepo.getResults({ _id });
+
+    return {
+      winner: results.winner || '',
+      participants: results.participants,
+    };
   }
 
   async collectParticipants(

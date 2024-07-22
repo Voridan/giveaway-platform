@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Post,
   Query,
   Res,
@@ -31,8 +32,8 @@ export class AuthController {
     private readonly mailService: MailService,
   ) {}
 
-  @PublicRoute()
   @Post('/local/signup')
+  @PublicRoute()
   @Serialize(AuthResponseDto)
   async signupLocal(
     @Query('admin') adminSecret: string,
@@ -47,12 +48,13 @@ export class AuthController {
 
     const { newUser, tokens } = await this.authService.signupLocal(body);
     this.attachTokenToCookie(res, tokens.refreshToken);
-    return { user: newUser, accessToken: tokens.accessToken };
+    return { ...newUser, accessToken: tokens.accessToken };
   }
 
-  @PublicRoute()
   @Post('/local/login')
+  @PublicRoute()
   @Serialize(AuthResponseDto)
+  @HttpCode(200)
   async loginLocal(
     @Body() loginUserDto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
@@ -63,6 +65,7 @@ export class AuthController {
   }
 
   @Get('/logout')
+  @HttpCode(200)
   logout(
     @CurrentUser('sub') userId: string,
     @Res({ passthrough: true }) res: Response,
@@ -72,7 +75,6 @@ export class AuthController {
   }
 
   @Get('/refresh')
-  @PublicRoute()
   @UseGuards(RefreshGuard)
   @Serialize(AuthResponseDto)
   async refresh(
@@ -88,6 +90,7 @@ export class AuthController {
   }
 
   @Post('/forgot-password')
+  @HttpCode(200)
   async forgotPassword(@CurrentUser() user: JwtPayload) {
     const secret = await this.authService.generateResetPasswordTokenAndSave(
       user.email,
@@ -107,6 +110,7 @@ export class AuthController {
   }
 
   @Post('/reset-password')
+  @HttpCode(200)
   async resetPassword(
     @CurrentUser() user: JwtPayload,
     @Body() resetPasswordDto: ResetPasswordDto,

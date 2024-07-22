@@ -5,9 +5,9 @@ import { AuthController } from './auth.controller';
 import { MailModule } from '../mail/mail.module';
 import { AccessStrategy, RefreshStrategy } from './strategies';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule, UserDocument, UserSchema } from '@app/common';
 import { UserMongooseRepository } from '../repository/user.mongoose-repository';
+import { ConfigModule } from '@app/common/config/config.module';
 
 @Module({
   imports: [

@@ -52,7 +52,7 @@ export class AuthService {
     const user = await this.usersService.findByEmail(dto.email);
 
     if (!user) {
-      throw new ForbiddenException('Access denied.');
+      throw new BadRequestException('Invalid email.');
     }
 
     const passwordMatch = await this.passwordService.compare(
@@ -61,7 +61,7 @@ export class AuthService {
     );
 
     if (!passwordMatch) {
-      throw new ForbiddenException('Access denied.');
+      throw new BadRequestException('Wrong password.');
     }
 
     const tokens = await this.getTokens(
