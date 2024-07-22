@@ -46,6 +46,7 @@ describe('Giveaways E2E', () => {
             postUrl: 'https://instagram.com/p/somePost',
           })
           .expect(201);
+
         expect(response.body).toEqual(
           expect.objectContaining({
             title: 'testGiveaway',
@@ -55,6 +56,44 @@ describe('Giveaways E2E', () => {
             ended: false,
           }),
         );
+      } else {
+        throw new BadRequestException(
+          'Failed to signup user, when testing createGiveaway',
+        );
+      }
+    });
+
+    it('should update giveaway', async () => {
+      const server = app.getHttpServer();
+      const loginResponse = await request(server)
+        .post('/auth/local/login')
+        .send({
+          email: testUser.email,
+          password: testUser.password,
+        });
+
+      if (loginResponse.ok) {
+        const createResponse = await request(server)
+          .post(BASE_URL)
+          .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+          .send({
+            title: 'testGiveaway for update',
+            description: 'testDescription',
+            postUrl: 'https://instagram.com/p/somePost',
+          })
+          .expect(201);
+
+        const updResponse = await request(server)
+          .patch(BASE_URL + `/${createResponse.body.id}`)
+          .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+          .send({
+            title: 'testGiveaway1232',
+            participants: 'testP1 testP2',
+          })
+          .expect(200);
+
+        expect(updResponse.body.title).toEqual('testGiveaway1232');
+        expect(updResponse.body.participantsCount).toEqual(2);
       } else {
         throw new BadRequestException(
           'Failed to signup user, when testing createGiveaway',
@@ -160,17 +199,51 @@ describe('Giveaways E2E', () => {
           postUrl: 'https://instagram.com/p/somePost',
           participants: 'sara john luke',
         });
-      console.log(createResponse.body);
 
       const resultsResponse = await request(server)
         .get(BASE_URL + `/${createResponse.body.id}/results`)
         .set('Authorization', `Bearer ${loginResponse.body.accessToken}`);
-      console.log(resultsResponse.body);
 
       expect(resultsResponse.body.participants).toEqual(
         expect.arrayContaining(['sara', 'john', 'luke']),
       );
       expect(resultsResponse.body.winner).toEqual('');
+    });
+  });
+
+  describe('removeGiveaway', () => {
+    it('should delete giveaway with its participants', async () => {
+      const server = app.getHttpServer();
+      const loginResponse = await request(server)
+        .post('/auth/local/login')
+        .send({
+          email: testUser.email,
+          password: testUser.password,
+        });
+      const createResponse = await request(server)
+        .post(BASE_URL)
+        .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+        .send({
+          title: 'giveawayToDelete',
+          description: 'testDescription',
+          postUrl: 'https://instagram.com/p/somePost',
+          participants: 'sara john luke',
+        });
+
+      await request(server)
+        .delete(BASE_URL + `/${createResponse.body.id}`)
+        .set('Authorization', `Bearer ${loginResponse.body.accessToken}`);
+
+      const participantsRepository = dataSource.getRepository('Participant');
+      const participants = await participantsRepository
+        .createQueryBuilder()
+        .select()
+        .where('"giveawayId" = :deletedId', {
+          deletedId: createResponse.body.id,
+        })
+        .execute();
+
+      expect(participants).toEqual([]);
     });
   });
 });

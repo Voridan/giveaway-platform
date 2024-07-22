@@ -55,11 +55,11 @@ export class GiveawaysService implements OnModuleInit {
       giveawayDto;
 
     const giveaway = new Giveaway({ owner, title, description, postUrl });
-
+    const savedGv = await this.giveawayRepo.create(giveaway);
     if (participants) {
       const participantsEntity = this.mapParticipantsToEntity(participants);
-      giveaway.participantsCount = participantsEntity.length;
-      giveaway.participants = participantsEntity;
+      savedGv.participantsCount = participantsEntity.length;
+      savedGv.participants = participantsEntity;
     }
 
     if (partnersIds) {
@@ -68,10 +68,12 @@ export class GiveawaysService implements OnModuleInit {
       if (partners.length === 0) {
         throw new BadRequestException("Invalid partners' ids");
       }
-      giveaway.partners = partners;
+      savedGv.partners = partners;
     }
 
-    return this.giveawayRepo.save(giveaway);
+    return participants || partnersIds
+      ? this.giveawayRepo.save(savedGv)
+      : savedGv;
   }
 
   async moderateApprove(id: number) {
@@ -174,7 +176,6 @@ export class GiveawaysService implements OnModuleInit {
         winner: true,
       },
     );
-    console.log('giveaway', giveaway);
 
     const results = new GiveawayResultDto();
     results.participants = giveaway.participants?.map((p) => p.nickname);
