@@ -3,12 +3,6 @@ import { ConfigModule } from '../config/config.module';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Giveaway, Participant, User } from './entities';
-import { RowsCount } from './entities/rows-count.entity';
-import {
-  GiveawaySubscriber,
-  ParticipantSubscriber,
-  UserSubscriber,
-} from './subscribers';
 import { EntityClassOrSchema } from '@nestjs/typeorm/dist/interfaces/entity-class-or-schema.type';
 
 @Module({
@@ -24,13 +18,12 @@ import { EntityClassOrSchema } from '@nestjs/typeorm/dist/interfaces/entity-clas
           port: config.get<number>('DB_PORT'),
           username: config.get<string>('DB_USER'),
           password: config.get<string>('DB_PASSWORD'),
-          entities: [User, Giveaway, Participant, RowsCount],
+          entities: [User, Giveaway, Participant],
           synchronize: true,
         };
       },
     }),
   ],
-  providers: [UserSubscriber, GiveawaySubscriber, ParticipantSubscriber],
 })
 export class DatabaseModule {
   static forFeature(models: EntityClassOrSchema[]) {

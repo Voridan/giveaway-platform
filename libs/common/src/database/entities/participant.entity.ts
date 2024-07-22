@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Giveaway } from './giveaway.entity';
 import { AbstractEntity } from './abstract.entity';
 
@@ -13,5 +13,6 @@ export class Participant extends AbstractEntity<Participant> {
   @ManyToOne(() => Giveaway, (giveaway) => giveaway.participants, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'giveawayId' })
   giveaway: Giveaway;
 }

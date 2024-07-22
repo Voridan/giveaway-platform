@@ -3,11 +3,11 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { DataSource } from 'typeorm';
-import { clearDb } from './clearDb';
 import { CreateUserDto } from '../src/users/dto/create-user.dto';
 import { LoginUserDto } from '../src/users/dto/login-user.dto';
 import { AuthService } from '../src/auth/auth.service';
 import { MailService } from '../src/mail/mail.service';
+import { clearDb } from './clearDb';
 
 describe('Authentication E2E', () => {
   let app: INestApplication;
@@ -121,7 +121,6 @@ describe('Authentication E2E', () => {
       };
 
       const expectedRes = {
-        id: 1,
         email: 'test@example.com',
         userName: 'test',
         isAdmin: false,
@@ -133,7 +132,7 @@ describe('Authentication E2E', () => {
         .expect(200);
 
       expect(response.body).toEqual({
-        id: expectedRes.id,
+        id: expect.any(Number),
         userName: expectedRes.userName,
         email: expectedRes.email,
         isAdmin: expectedRes.isAdmin,

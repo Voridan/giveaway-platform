@@ -32,18 +32,17 @@ export class GiveawaysController {
 
   @Post()
   @Serialize(GiveawayDto)
-  createGiveaway(
+  async createGiveaway(
     @Body() body: CreateGiveawayDto,
     @CurrentUser('sub') userId: number,
   ) {
     return this.giveawaysService.create(body, userId);
   }
 
-  @Post('/:id/end')
+  @Patch('/:id/end')
   @Serialize(GiveawayDto)
-  async endGiveaway(@Param('id', ParseIntPipe) id: number) {
-    const giveaway = await this.giveawaysService.end(id);
-    return giveaway;
+  endGiveaway(@Param('id', ParseIntPipe) id: number) {
+    return this.giveawaysService.end(id);
   }
 
   @Get('/search')

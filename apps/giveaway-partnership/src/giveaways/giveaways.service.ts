@@ -51,7 +51,7 @@ export class GiveawaysService implements OnModuleInit {
     if (!owner) {
       throw new BadRequestException('Owner not found.');
     }
-    const { title, description, postUrl, participants, partnerIds } =
+    const { title, description, postUrl, participants, partnersIds } =
       giveawayDto;
 
     const giveaway = new Giveaway({ owner, title, description, postUrl });
@@ -62,8 +62,8 @@ export class GiveawaysService implements OnModuleInit {
       giveaway.participants = participantsEntity;
     }
 
-    if (partnerIds) {
-      const ids = partnerIds.trim().split(' ').map(Number);
+    if (partnersIds) {
+      const ids = partnersIds.trim().split(' ').map(Number);
       const partners = await this.usersService.findManyById(ids);
       if (partners.length === 0) {
         throw new BadRequestException("Invalid partners' ids");
@@ -174,9 +174,10 @@ export class GiveawaysService implements OnModuleInit {
         winner: true,
       },
     );
+    console.log('giveaway', giveaway);
 
     const results = new GiveawayResultDto();
-    results.participants = giveaway.participants.map((p) => p.nickname);
+    results.participants = giveaway.participants?.map((p) => p.nickname);
     results.winner = giveaway.winner?.nickname || '';
 
     return results;

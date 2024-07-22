@@ -4,10 +4,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   JoinTable,
   ManyToMany,
   ManyToOne,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { AbstractEntity } from './abstract.entity';
 
@@ -40,16 +42,14 @@ export class Giveaway extends AbstractEntity<Giveaway> {
   @Column()
   ownerId: number;
 
-  @Column({ nullable: true })
-  winnerId: number;
-
   @Column({ type: 'tsvector', select: false, nullable: true })
   document: string;
 
   @ManyToOne(() => User, (user) => user.ownGiveaways)
   owner: User;
 
-  @ManyToOne(() => Participant, { nullable: true })
+  @OneToOne(() => Participant, { nullable: true })
+  @JoinColumn()
   winner: Participant;
 
   @ManyToMany(() => User, { cascade: true })
@@ -67,7 +67,7 @@ export class Giveaway extends AbstractEntity<Giveaway> {
   partners: User[];
 
   @OneToMany(() => Participant, (participant) => participant.giveaway, {
-    cascade: true,
+    cascade: ['insert'],
   })
   participants: Participant[];
 }

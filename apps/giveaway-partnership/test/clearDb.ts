@@ -5,7 +5,7 @@ export async function clearDb(dataSource: DataSource) {
   for (const entity of entities) {
     const repository = dataSource.getRepository(entity.name);
     await repository.query(
-      `TRUNCATE "${entity.tableName}" RESTART IDENTITY CASCADE;`,
+      `TRUNCATE "${entity.tableName.toLowerCase()}" RESTART IDENTITY CASCADE;`,
     );
   }
 }

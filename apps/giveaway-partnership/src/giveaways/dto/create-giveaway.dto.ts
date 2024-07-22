@@ -21,5 +21,5 @@ export class CreateGiveawayDto {
   @Matches(/^\d+( \d+)*$/, {
     message: `Partners' ids must be space-separated number IDs`,
   })
-  partnerIds?: string | undefined;
+  partnersIds?: string | undefined;
 }
