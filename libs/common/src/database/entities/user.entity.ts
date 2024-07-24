@@ -35,7 +35,9 @@ export class User extends AbstractEntity<User> {
   @Column({ type: 'timestamp with time zone', nullable: true })
   resetPasswordExpires?: Date;
 
-  @OneToMany(() => Giveaway, (giveaway) => giveaway.owner)
+  @OneToMany(() => Giveaway, (giveaway) => giveaway.owner, {
+    onDelete: 'CASCADE',
+  })
   ownGiveaways: Giveaway[];
 
   @ManyToMany(() => Giveaway, (giveaway) => giveaway.partners)
