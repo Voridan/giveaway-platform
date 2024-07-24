@@ -1,11 +1,11 @@
-import { DataSource } from 'typeorm';
+import { PrismaService } from '@app/common';
 
-export async function clearDb(dataSource: DataSource) {
-  const entities = dataSource.entityMetadatas;
-  for (const entity of entities) {
-    const repository = dataSource.getRepository(entity.name);
-    await repository.query(
-      `TRUNCATE "${entity.tableName.toLowerCase()}" RESTART IDENTITY CASCADE;`,
+export async function clearDb(prismaService: PrismaService) {
+  const tables = ['User', 'Giveaway', 'Participant', 'Winner'];
+
+  for (const table of tables) {
+    await prismaService.$executeRawUnsafe(
+      `TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE;`,
     );
   }
 }

@@ -20,15 +20,15 @@ export class UsersController {
     @CurrentUser('sub') userId: number,
     @Query('like') like: string,
   ) {
-    const users = await this.usersService.findSimilar(like);
+    const users = (await this.usersService.findSimilar(like)) as {
+      id: number;
+    }[];
     return users.filter((user) => user.id !== userId);
   }
 
   @Get('/:id')
   async findUser(@Param('id') id: string) {
     const user = await this.usersService.findById(parseInt(id));
-    console.log(user);
-
     if (user == null) {
       throw new NotFoundException('User not found.');
     }

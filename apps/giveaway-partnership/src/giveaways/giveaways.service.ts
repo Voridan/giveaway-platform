@@ -9,13 +9,11 @@ import {
 import { CreateGiveawayDto } from './dto/create-giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
 import { GiveawayResultDto } from './dto/giveaway-result.dto';
-import { GiveawayTypeOrmRepository } from '../repository/giveaway.typeorm-repository';
-import { CollectParticipantsEvent, Giveaway, Participant } from '@app/common';
+import { CollectParticipantsEvent, PrismaService } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ParticipantsSourceDto } from './dto/participants-source.dto';
 import { AddParticipantsDto } from './dto/add-participants.dto';
 import { UsersService } from '../users/users.service';
-import { FindOptionsRelations } from 'typeorm';
 import { MailService } from '../mail/mail.service';
 import { ConfigService } from '@nestjs/config';
 import { getDeclineMail } from './util/get-decline-mail';
@@ -23,7 +21,7 @@ import { getDeclineMail } from './util/get-decline-mail';
 @Injectable()
 export class GiveawaysService implements OnModuleInit {
   constructor(
-    private readonly giveawayRepo: GiveawayTypeOrmRepository,
+    private readonly prismaService: PrismaService,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly config: ConfigService,
@@ -32,16 +30,15 @@ export class GiveawaysService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const giveaways = await this.giveawayRepo.find(
-      {},
-      {
-        participants: true,
-      },
-    );
+    const giveaways = await this.prismaService.giveaway.findMany({
+      include: { _count: { select: { participants: true } } },
+    });
 
     for (const giveaway of giveaways) {
-      giveaway.participantsCount = giveaway.participants.length;
-      await this.giveawayRepo.save(giveaway);
+      await this.prismaService.giveaway.update({
+        where: { id: giveaway.id },
+        data: { participantsCount: giveaway._count.participants },
+      });
     }
     console.log('Updated participant counts for all giveaways on startup');
   }
@@ -54,40 +51,64 @@ export class GiveawaysService implements OnModuleInit {
     const { title, description, postUrl, participants, partnersIds } =
       giveawayDto;
 
-    const giveaway = new Giveaway({ owner, title, description, postUrl });
-    const savedGv = await this.giveawayRepo.create(giveaway);
-    if (participants) {
-      const participantsEntity = this.mapParticipantsToEntity(participants);
-      savedGv.participantsCount = participantsEntity.length;
-      savedGv.participants = participantsEntity;
-    }
+    const participantsArr = participants?.length
+      ? participants
+          .trim()
+          .split(' ')
+          .map((participant) => ({
+            name: participant,
+          }))
+      : [];
 
-    if (partnersIds) {
-      const ids = partnersIds.trim().split(' ').map(Number);
-      const partners = await this.usersService.findManyById(ids);
-      if (partners.length === 0) {
-        throw new BadRequestException("Invalid partners' ids");
-      }
-      savedGv.partners = partners;
-    }
+    const partnersIdsArr = partnersIds?.length
+      ? partnersIds
+          .trim()
+          .split(' ')
+          .map((partnerId) => ({ id: +partnerId }))
+      : [];
 
-    return participants || partnersIds
-      ? this.giveawayRepo.save(savedGv)
-      : savedGv;
+    return this.prismaService.giveaway.create({
+      data: {
+        title,
+        description,
+        postUrl,
+        owner: {
+          connect: { id: owner.id },
+        },
+        participantsCount: participantsArr.length,
+        participants: {
+          create: participantsArr,
+        },
+        partners: {
+          connect: partnersIdsArr,
+        },
+      },
+      include: {
+        partners: true,
+      },
+    });
   }
 
   async moderateApprove(id: number) {
-    const updated = await this.giveawayRepo.findOneAndUpdate(
-      { id },
-      { onModeration: false },
-      { owner: true },
-    );
-    const owner = updated.owner;
+    const updated = await this.prismaService.giveaway.update({
+      where: { id },
+      data: {
+        onModeration: false,
+      },
+      include: {
+        owner: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+    const ownerEmail = updated.owner.email;
 
-    const mail = getApproveMail(owner.email, updated.title);
+    const mail = getApproveMail(ownerEmail, updated.title);
     await this.mailService.sendEmail({
       from: this.config.get<string>('APP_MAIL'),
-      to: owner.email,
+      to: ownerEmail,
       subject: 'Moderation',
       html: mail,
     });
@@ -96,16 +117,23 @@ export class GiveawaysService implements OnModuleInit {
   }
 
   async moderateDelete(id: number) {
-    const toDelete = await this.giveawayRepo.findOne({ id }, { owner: true });
+    const toDelete = await this.prismaService.giveaway.findUnique({
+      where: { id },
+      include: {
+        owner: {
+          select: { email: true },
+        },
+      },
+    });
     if (!toDelete) throw new NotFoundException('Giveaway not found');
 
     await this.remove(toDelete.id);
-    const owner = toDelete.owner;
+    const ownerEmail = toDelete.owner.email;
 
-    const mail = getDeclineMail(owner.email, toDelete.title);
+    const mail = getDeclineMail(ownerEmail, toDelete.title);
     await this.mailService.sendEmail({
       from: this.config.get<string>('APP_MAIL'),
-      to: owner.email,
+      to: ownerEmail,
       subject: 'Moderation',
       html: mail,
     });
@@ -114,72 +142,81 @@ export class GiveawaysService implements OnModuleInit {
   }
 
   async findById(id: number) {
-    const giveaway = await this.giveawayRepo.findOne(
-      { id },
-      { partners: true },
-    );
+    const giveaway = await this.prismaService.giveaway.findUnique({
+      where: { id },
+      include: {
+        partners: true,
+      },
+    });
 
     return giveaway;
   }
 
   async update(id: number, body: UpdateGiveawayDto) {
-    const { title, description, postUrl } = body;
-    const { participants, partnersIds } = body;
-    const updateObj: Partial<Giveaway> = { title, description, postUrl };
+    const { title, description, postUrl, participants, partnersIds } = body;
+    const participantsArr = participants?.length
+      ? participants
+          .trim()
+          .split(' ')
+          .map((name) => ({ name }))
+      : [];
 
-    const relationsToUpdate: FindOptionsRelations<Giveaway> = {};
-    relationsToUpdate.participants = !!participants;
-    relationsToUpdate.partners = !!partnersIds;
+    const partnersIdsArr = partnersIds?.length
+      ? partnersIds
+          .trim()
+          .split(' ')
+          .map((id) => ({ id: +id }))
+      : [];
 
-    let updated: Giveaway;
-    if (Object.values(updateObj).some((value) => value !== undefined)) {
-      updated = await this.giveawayRepo.findOneAndUpdate(
-        { id },
-        updateObj,
-        relationsToUpdate,
-      );
-    } else {
-      updated = await this.giveawayRepo.findOne({ id }, relationsToUpdate);
-    }
-
-    if (relationsToUpdate.participants) {
-      const participantsEntity = this.mapParticipantsToEntity(participants);
-      updated.participants.push(...participantsEntity);
-      updated.participantsCount += participantsEntity.length;
-    }
-
-    if (relationsToUpdate.partners) {
-      const idsArray = partnersIds.trim().split(' ').map(Number);
-      const partners = await this.usersService.findManyById(idsArray);
-      if (partners.length === 0) {
-        throw new BadRequestException("Invalid partners' ids");
-      }
-      updated.partners = partners;
-    }
-
-    return this.giveawayRepo.save(updated);
+    return this.prismaService.giveaway.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        postUrl,
+        participantsCount: {
+          increment: participantsArr.length,
+        },
+        participants: {
+          create: participantsArr,
+        },
+        partners: {
+          connect: partnersIdsArr,
+        },
+      },
+      include: {
+        partners: true,
+      },
+    });
   }
 
-  async end(id: number) {
-    return this.giveawayRepo.findOneAndUpdate({ id }, { ended: true });
+  end(id: number) {
+    return this.prismaService.giveaway.update({
+      where: { id },
+      data: { ended: true },
+    });
   }
 
   async remove(id: number) {
-    return this.giveawayRepo.findOneAndDelete({ id });
+    return this.prismaService.giveaway.delete({ where: { id } });
   }
 
   async getResult(id: number) {
-    const giveaway = await this.giveawayRepo.findOne(
-      { id },
-      {
+    const giveaway = await this.prismaService.giveaway.findUnique({
+      where: { id },
+      include: {
         participants: true,
-        winner: true,
+        winner: {
+          include: {
+            participant: true,
+          },
+        },
       },
-    );
+    });
 
     const results = new GiveawayResultDto();
-    results.participants = giveaway.participants?.map((p) => p.nickname);
-    results.winner = giveaway.winner?.nickname || '';
+    results.participants = giveaway.participants?.map((p) => p.name);
+    results.winner = giveaway.winner?.participant?.name || '';
 
     return results;
   }
@@ -189,7 +226,12 @@ export class GiveawaysService implements OnModuleInit {
     ownerId: number,
   ) {
     const id = participantsSourceDto.giveawayId;
-    const giveaway = await this.giveawayRepo.findOne({ id }, { owner: true });
+    const giveaway = await this.prismaService.giveaway.findUnique({
+      where: { id },
+      include: {
+        owner: true,
+      },
+    });
 
     if (giveaway.owner?.id !== ownerId) {
       throw new BadRequestException('User does not have such giveaway');
@@ -207,30 +249,53 @@ export class GiveawaysService implements OnModuleInit {
     );
   }
 
-  async addParticipants(id: number, addParticipantsDto: AddParticipantsDto) {
-    const giveaway = await this.giveawayRepo.findOne({ id });
-    if (!giveaway) {
-      throw new BadRequestException('Giveaway not found');
-    }
-    const participants = this.mapParticipantsToEntity(addParticipantsDto.data);
-    giveaway.participants.push(...participants);
-    giveaway.participantsCount += participants.length;
-    return this.giveawayRepo.save(giveaway);
+  addParticipants(id: number, addParticipantsDto: AddParticipantsDto) {
+    const participants = addParticipantsDto.data
+      .trim()
+      .split(' ')
+      .map((item) => ({ name: item }));
+
+    return this.prismaService.giveaway.update({
+      where: { id },
+      data: {
+        participants: {
+          create: participants,
+        },
+        participantsCount: {
+          increment: participants.length,
+        },
+      },
+    });
   }
 
   searchGiveaways(query: string) {
-    return this.giveawayRepo.searchGiveaways(query);
+    return this.prismaService
+      .$queryRaw`SELECT * FROM search_giveaways(${query});`;
   }
 
   async getUnmoderatedGiveaways(limit: number, lastItemId: number) {
     if (lastItemId !== undefined && lastItemId > 0) {
-      const item = await this.giveawayRepo.findOne({ id: lastItemId });
+      const item = await this.prismaService.giveaway.findUnique({
+        where: {
+          id: lastItemId,
+        },
+      });
       if (!item) {
         throw new BadRequestException('Last item id is invalid.');
       }
     }
+    const [giveaways, totalCount] = await this.prismaService.$transaction([
+      this.prismaService.giveaway.findMany({
+        where: { AND: [{ id: { gt: lastItemId } }, { onModeration: true }] },
+        orderBy: { id: 'asc' },
+        take: limit,
+      }),
+      this.prismaService.giveaway.count({
+        where: { onModeration: true },
+      }),
+    ]);
 
-    return this.giveawayRepo.getUnmoderatedByLastId(limit, lastItemId);
+    return [giveaways, totalCount] as const;
   }
 
   async getPartneredPaginatedGiveaways(
@@ -238,7 +303,33 @@ export class GiveawaysService implements OnModuleInit {
     offset: number,
     limit: number,
   ) {
-    return this.giveawayRepo.getPartneredGiveaways(partnerId, offset, limit);
+    const [giveaways, totalCount] = await this.prismaService.$transaction([
+      this.prismaService.giveaway.findMany({
+        orderBy: {
+          id: 'asc',
+        },
+        where: {
+          partners: {
+            some: {
+              id: partnerId,
+            },
+          },
+        },
+        skip: offset,
+        take: limit,
+      }),
+      this.prismaService.giveaway.count({
+        where: {
+          partners: {
+            some: {
+              id: partnerId,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return [giveaways, totalCount] as const;
   }
 
   async getOwnPaginatedGiveaways(
@@ -246,11 +337,24 @@ export class GiveawaysService implements OnModuleInit {
     offset: number,
     limit: number,
   ) {
-    return this.giveawayRepo.getOwnGiveaways(userId, offset, limit);
-  }
+    const [giveaways, totalCount] = await this.prismaService.$transaction([
+      this.prismaService.giveaway.findMany({
+        where: {
+          ownerId: userId,
+        },
+        skip: offset,
+        take: limit,
+        orderBy: {
+          id: 'asc',
+        },
+      }),
+      this.prismaService.giveaway.count({
+        where: {
+          ownerId: userId,
+        },
+      }),
+    ]);
 
-  mapParticipantsToEntity(participantsStr: string) {
-    const participants = participantsStr.trim().split(' ');
-    return participants.map((nickname) => new Participant({ nickname }));
+    return [giveaways, totalCount] as const;
   }
 }

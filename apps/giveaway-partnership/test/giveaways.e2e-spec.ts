@@ -2,12 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { DataSource } from 'typeorm';
 import { clearDb } from './clearDb';
+import { PrismaService } from '@app/common';
 
 describe('Giveaways E2E', () => {
   let app: INestApplication;
-  let dataSource: DataSource;
+  let prismaService: PrismaService;
 
   const BASE_URL = '/giveaways';
 
@@ -24,9 +24,9 @@ describe('Giveaways E2E', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    dataSource = moduleFixture.get(DataSource);
+    prismaService = moduleFixture.get(PrismaService);
     await app.init();
-    await clearDb(dataSource);
+    await clearDb(prismaService);
   });
 
   describe('createGiveaway', () => {
@@ -169,7 +169,6 @@ describe('Giveaways E2E', () => {
           title: 'giveawayToEnd',
           description: 'testDescription',
           postUrl: 'https://instagram.com/p/somePost',
-          participants: 'sara john luke',
         });
 
       const endResponse = await request(server)
@@ -234,14 +233,9 @@ describe('Giveaways E2E', () => {
         .delete(BASE_URL + `/${createResponse.body.id}`)
         .set('Authorization', `Bearer ${loginResponse.body.accessToken}`);
 
-      const participantsRepository = dataSource.getRepository('Participant');
-      const participants = await participantsRepository
-        .createQueryBuilder()
-        .select()
-        .where('"giveawayId" = :deletedId', {
-          deletedId: createResponse.body.id,
-        })
-        .execute();
+      const participants = await prismaService.participant.findMany({
+        where: { giveawayId: createResponse.body.id },
+      });
 
       expect(participants).toEqual([]);
     });

@@ -2,16 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { DataSource } from 'typeorm';
 import { CreateUserDto } from '../src/users/dto/create-user.dto';
 import { LoginUserDto } from '../src/users/dto/login-user.dto';
 import { AuthService } from '../src/auth/auth.service';
 import { MailService } from '../src/mail/mail.service';
 import { clearDb } from './clearDb';
+import { PrismaService } from '@app/common';
 
 describe('Authentication E2E', () => {
   let app: INestApplication;
-  let dataSource: DataSource;
+  let prismaService: PrismaService;
   let authService: AuthService;
   let mailService: MailService;
 
@@ -22,11 +22,11 @@ describe('Authentication E2E', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    dataSource = moduleFixture.get(DataSource);
+    prismaService = moduleFixture.get(PrismaService);
     authService = moduleFixture.get(AuthService);
     mailService = moduleFixture.get(MailService);
     await app.init();
-    await clearDb(dataSource);
+    await clearDb(prismaService);
   });
 
   describe('signupLocal', () => {

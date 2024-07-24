@@ -1,14 +1,13 @@
-import { CollectParticipantsEvent, Participant } from '@app/common';
+import { CollectParticipantsEvent, PrismaService } from '@app/common';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as ref from 'instagram-id-to-url-segment';
-import { GiveawayTypeOrmRepository } from './repository/giveaway.typeorm-repository';
 
 @Injectable()
 export class ParticipantsCollectorService {
   constructor(
     private readonly config: ConfigService,
-    private readonly giveawaysRepo: GiveawayTypeOrmRepository,
+    private readonly prismaService: PrismaService,
   ) {}
 
   async collectInstagramParticipants(eventData: CollectParticipantsEvent) {
@@ -52,19 +51,22 @@ export class ParticipantsCollectorService {
           ) as string[];
           const unified = Array.from(new Set(nicknames));
 
-          const participants = unified.map((nickname) => {
-            const participant = new Participant({
-              nickname: nickname,
-            });
-            return participant;
-          });
+          const participants = unified.map((name) => ({
+            name,
+            giveawayId: eventData.giveawayId,
+          }));
 
-          const giveaway = await this.giveawaysRepo.findOne({
-            id: eventData.giveawayId,
+          await this.prismaService.giveaway.update({
+            where: { id: eventData.giveawayId },
+            data: {
+              participants: {
+                create: participants,
+              },
+              participantsCount: {
+                increment: participants.length,
+              },
+            },
           });
-          giveaway.participants.push(...participants);
-          giveaway.participantsCount += participants.length;
-          await this.giveawaysRepo.save(giveaway);
 
           nextMinId = data.next_min_id;
           hasNextPage = nextMinId ?? false;

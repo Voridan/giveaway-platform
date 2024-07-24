@@ -2,21 +2,14 @@ import { Module } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { AuthService } from '../auth/auth.service';
-import { DatabaseModule, User } from '@app/common';
-import { UserTypeOrmRepository } from '../repository/user.typeorm-repository';
+import { DatabaseModule } from '@app/common';
 import { JwtService } from '@nestjs/jwt';
 import { PasswordService } from '../auth/password.service';
 
 @Module({
-  imports: [DatabaseModule.forFeature([User])],
+  imports: [DatabaseModule],
   controllers: [UsersController],
-  providers: [
-    UsersService,
-    AuthService,
-    PasswordService,
-    UserTypeOrmRepository,
-    JwtService,
-  ],
+  providers: [UsersService, AuthService, PasswordService, JwtService],
   exports: [UsersService],
 })
 export class UsersModule {}

@@ -2,16 +2,11 @@ import { Module } from '@nestjs/common';
 import { ParticipantsCollectorController } from './participants-collector.controller';
 import { ParticipantsCollectorService } from './participants-collector.service';
 import { ConfigService } from '@nestjs/config';
-import { GiveawayTypeOrmRepository } from './repository/giveaway.typeorm-repository';
-import { DatabaseModule, Giveaway } from '@app/common';
+import { DatabaseModule, PrismaService } from '@app/common';
 
 @Module({
-  imports: [DatabaseModule, DatabaseModule.forFeature([Giveaway])],
+  imports: [DatabaseModule],
   controllers: [ParticipantsCollectorController],
-  providers: [
-    ParticipantsCollectorService,
-    ConfigService,
-    GiveawayTypeOrmRepository,
-  ],
+  providers: [ParticipantsCollectorService, ConfigService, PrismaService],
 })
 export class ParticipantsCollectorModule {}

@@ -1,17 +1,16 @@
 import { Module } from '@nestjs/common';
 import { GiveawaysController } from './giveaways.controller';
 import { GiveawaysService } from './giveaways.service';
-import { GiveawayTypeOrmRepository } from '../repository/giveaway.typeorm-repository';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
-import { DatabaseModule, Giveaway, Participant } from '@app/common';
+import { DatabaseModule } from '@app/common';
 
 @Module({
   imports: [
     UsersModule,
     MailModule,
-    DatabaseModule.forFeature([Giveaway, Participant]),
+    DatabaseModule,
     ClientsModule.register([
       {
         name: 'participants-microservice',
@@ -20,6 +19,6 @@ import { DatabaseModule, Giveaway, Participant } from '@app/common';
     ]),
   ],
   controllers: [GiveawaysController],
-  providers: [GiveawaysService, GiveawayTypeOrmRepository],
+  providers: [GiveawaysService],
 })
 export class GiveawaysModule {}

@@ -3,7 +3,6 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { PasswordService } from './password.service';
 import { LoginUserDto } from '../users/dto/login-user.dto';
@@ -12,12 +11,12 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Tokens } from './types';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { IsNull, Not } from 'typeorm';
+import { PrismaService } from '@app/common';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService,
+    private readonly prismaService: PrismaService,
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -26,7 +25,7 @@ export class AuthService {
   async signupLocal(createUser: CreateUserDto) {
     const hashedPassword = await this.passwordService.hash(createUser.password);
     createUser.password = hashedPassword;
-    const newUser = await this.usersService.create(createUser);
+    const newUser = await this.prismaService.user.create({ data: createUser });
     const tokens = await this.getTokens(
       newUser.id,
       newUser.isAdmin,
@@ -37,7 +36,9 @@ export class AuthService {
   }
 
   async loginLocal(dto: LoginUserDto) {
-    const user = await this.usersService.findByEmail(dto.email);
+    const user = await this.prismaService.user.findUnique({
+      where: { email: dto.email },
+    });
 
     if (!user) {
       throw new BadRequestException('Invalid email.');
@@ -58,16 +59,18 @@ export class AuthService {
   }
 
   logout(userId: number) {
-    return this.usersService.update(
-      { id: userId, jwtRefreshTokenHash: Not(IsNull()) },
-      { jwtRefreshTokenHash: null },
-    );
+    return this.prismaService.user.update({
+      where: { id: userId, jwtRefreshTokenHash: { not: null } },
+      data: { jwtRefreshTokenHash: null },
+    });
   }
 
   async refresh(userId: number, rt: string) {
-    const user = await this.usersService.findById(userId);
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+    });
     if (!user || !user.jwtRefreshTokenHash) {
-      throw new ForbiddenException('Access denied.');
+      throw new ForbiddenException('Wrong email.');
     }
 
     const rtMatches = await this.passwordService.compare(
@@ -76,7 +79,7 @@ export class AuthService {
     );
 
     if (!rtMatches) {
-      throw new ForbiddenException('Access denied.');
+      throw new ForbiddenException('Wrong password.');
     }
 
     const tokens = await this.getTokens(user.id, user.isAdmin, user.email);
@@ -113,16 +116,20 @@ export class AuthService {
 
   async updateRefreshTokenHash(userId: number, rt: string) {
     const hash = await this.passwordService.hash(rt);
-    await this.usersService.update(
-      { id: userId },
-      {
+    await this.prismaService.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
         jwtRefreshTokenHash: hash,
       },
-    );
+    });
   }
 
   async generateResetPasswordTokenAndSave(email: string) {
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.prismaService.user.findUnique({
+      where: { email },
+    });
     if (!user) {
       throw new BadRequestException('User with that email does not exists');
     }
@@ -141,13 +148,18 @@ export class AuthService {
     const FIVE_MINS = 5 * 60 * 1000;
 
     user.resetPasswordExpires = new Date(Date.now() + FIVE_MINS);
-    await this.usersService.update({ id: user.id }, user);
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { ...user },
+    });
 
     return secret;
   }
 
   async resetPassword(id: number, resetPasswordDto: ResetPasswordDto) {
-    const user = await this.usersService.findById(id);
+    const user = await this.prismaService.user.findUnique({
+      where: { id },
+    });
 
     if (!user) {
       throw new BadRequestException('User not found');
@@ -185,6 +197,7 @@ export class AuthService {
     user.resetPasswordToken = null;
     const tokens = await this.getTokens(user.id, user.isAdmin, user.email);
     await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
-    return this.usersService.update({ id }, user);
+
+    return this.prismaService.user.update({ where: { id }, data: { ...user } });
   }
 }

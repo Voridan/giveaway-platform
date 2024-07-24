@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,4 +5,59 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("PRISMA_DATABASE_URL")
+}
+
+model User {
+  id                   Int       @id @default(autoincrement())
+  userName             String    @unique
+  password             String
+  email                String    @unique
+  isAdmin              Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  jwtRefreshTokenHash  String?
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+
+  ownGiveaways Giveaway[] @relation("UserOwnGiveaways")
+  giveaways    Giveaway[] @relation("GiveawayPartners")
+}
+
+model Giveaway {
+  id                Int      @id @default(autoincrement())
+  title             String
+  description       String?
+  imageUrl          String?
+  postUrl           String?
+  onModeration      Boolean  @default(true)
+  ended             Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  participantsCount Int      @default(0)
+  document          String?
+
+  owner        User          @relation("UserOwnGiveaways", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId      Int
+  winner       Winner?
+  partners     User[]        @relation("GiveawayPartners")
+  participants Participant[] @relation("GiveawayParticipants")
+
+  @@index([ownerId], name: "ownerId")
+}
+
+model Participant {
+  id         Int      @id @default(autoincrement())
+  name       String
+  giveawayId Int
+  giveaway   Giveaway @relation(name: "GiveawayParticipants", fields: [giveawayId], references: [id], onDelete: Cascade)
+  winner     Winner?
+
+  @@index([giveawayId], name: "giveawayId")
+}
+
+model Winner {
+  giveawayId    Int         @unique
+  participantId Int         @unique
+  giveaway      Giveaway    @relation(fields: [giveawayId], references: [id])
+  participant   Participant @relation(fields: [participantId], references: [id])
+
+  @@id([giveawayId, participantId])
 }

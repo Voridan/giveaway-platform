@@ -1,47 +1,48 @@
 import { Injectable } from '@nestjs/common';
-import { User } from '@app/common/database/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UserTypeOrmRepository } from '../repository/user.typeorm-repository';
-import { FindOptionsWhere, In } from 'typeorm';
+import { PrismaService } from '@app/common';
+import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly repo: UserTypeOrmRepository) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   create(newUser: CreateUserDto) {
-    const user = new User(newUser);
-    return this.repo.create(user);
+    return this.prismaService.user.create({ data: newUser });
   }
 
   findById(id: number) {
     try {
-      return this.repo.findOne({ id });
+      return this.prismaService.user.findUnique({ where: { id } });
     } catch (error) {
       throw new Error(error);
     }
   }
 
   findManyById(ids: number[]) {
-    return this.repo.find({ id: In(ids) });
+    return this.prismaService.user.findMany({ where: { id: { in: ids } } });
   }
 
   findByEmail(email: string) {
-    return this.repo.findOne({ email });
+    return this.prismaService.user.findUnique({ where: { email } });
   }
 
   findSimilar(like: string) {
-    return this.repo.findSimilar(like);
+    return this.prismaService.$queryRaw`SELECT * FROM find_users(${like})`;
   }
 
   findAll() {
-    return this.repo.find({});
+    return this.prismaService.user.findMany();
   }
 
-  async update(where: FindOptionsWhere<User>, attrs: Partial<User>) {
-    return this.repo.findOneAndUpdate(where, attrs);
+  async update(id: number, updateData: Partial<UserDto>) {
+    return this.prismaService.user.update({
+      where: { id },
+      data: updateData,
+    });
   }
 
   async remove(id: number) {
-    return this.repo.findOneAndDelete({ id });
+    return this.prismaService.user.delete({ where: { id } });
   }
 }
