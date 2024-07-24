@@ -1,7 +1,6 @@
 import { GenericMongooseRepository, UserDocument } from '@app/common';
 import { Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { log } from 'console';
 import { Model, Types } from 'mongoose';
 
 export class UserMongooseRepository extends GenericMongooseRepository<UserDocument> {

@@ -16,7 +16,7 @@ export class ParticipantsCollectorService {
 
     if (postId) {
       const mediaId = ref.urlSegmentToInstagramId(postId);
-
+      const participantsSet = new Set<string>();
       let hasNextPage = true;
       let nextMinId = null;
       const apikey = this.config.get<string>('RAPID_API_KEY');
@@ -50,20 +50,26 @@ export class ParticipantsCollectorService {
           const nicknames = data.comments.map(
             (item) => item.user.username,
           ) as string[];
-          const unified = Array.from(new Set(nicknames));
-          await this.giveawaysRepo.findOneAndUpdate(
-            { _id: eventData.giveawayId },
-            {
-              $inc: { participantsCount: unified.length },
-              $push: { participants: unified },
-            },
-          );
+
+          for (const nickname of nicknames) participantsSet.add(nickname);
+
           nextMinId = data.next_min_id;
           hasNextPage = nextMinId ?? false;
         } catch (error) {
           console.error('Fetch exception: ', error.message);
           break;
         }
+      }
+      try {
+        await this.giveawaysRepo.findOneAndUpdate(
+          { _id: eventData.giveawayId },
+          {
+            $inc: { participantsCount: participantsSet.size },
+            $push: { participants: [...participantsSet.values()] },
+          },
+        );
+      } catch (error) {
+        console.log(error.message);
       }
     }
   }

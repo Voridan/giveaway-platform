@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
-import { PasswordService } from '../users/pasword.service';
+import { PasswordService } from './pasword.service';
 import { LoginUserDto } from '../users/dto/login-user.dto';
 import { randomBytes } from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -201,6 +201,6 @@ export class AuthService {
     user.resetPasswordExpires = null;
     user.resetPasswordToken = null;
 
-    return this.usersRepo.save(user);
+    return this.usersRepo.updateOne({ _id: user._id }, user);
   }
 }

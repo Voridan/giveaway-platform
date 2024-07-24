@@ -8,6 +8,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { DatabaseModule, UserDocument, UserSchema } from '@app/common';
 import { UserMongooseRepository } from '../repository/user.mongoose-repository';
 import { ConfigModule } from '@app/common/config/config.module';
+import { PasswordService } from './pasword.service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ConfigModule } from '@app/common/config/config.module';
     AccessStrategy,
     RefreshStrategy,
     UserMongooseRepository,
+    PasswordService,
   ],
   controllers: [AuthController],
 })
