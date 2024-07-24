@@ -16,7 +16,6 @@ import { AbstractEntity } from './abstract.entity';
 
 @Entity()
 @Index('IDX_OWNER_ID', ['ownerId'])
-@Index('IDX_GIVEAWAY_ID', ['id'])
 export class Giveaway extends AbstractEntity<Giveaway> {
   @Column()
   title: string;

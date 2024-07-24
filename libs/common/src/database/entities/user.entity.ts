@@ -4,14 +4,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  Index,
   ManyToMany,
   OneToMany,
 } from 'typeorm';
 import { AbstractEntity } from './abstract.entity';
 
 @Entity({ name: 'user' })
-@Index('IDX_USER_ID', ['id'])
 export class User extends AbstractEntity<User> {
   @Column({ unique: true })
   userName: string;
