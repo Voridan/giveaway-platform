@@ -27,6 +27,7 @@ import { PasswordService } from './pasword.service';
     UserMongooseRepository,
     PasswordService,
   ],
+  exports: [PasswordService],
   controllers: [AuthController],
 })
 export class AuthModule {}

@@ -1,3 +1,4 @@
+import { PasswordService } from './../auth/pasword.service';
 import { Module } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
@@ -13,7 +14,13 @@ import { UserMongooseRepository } from '../repository/user.mongoose-repository';
     ]),
   ],
   controllers: [UsersController],
-  providers: [UsersService, AuthService, JwtService, UserMongooseRepository],
+  providers: [
+    UsersService,
+    AuthService,
+    JwtService,
+    UserMongooseRepository,
+    PasswordService,
+  ],
   exports: [UsersService],
 })
 export class UsersModule {}
