@@ -15,7 +15,7 @@ export class ParticipantsCollectorService {
 
     if (postId) {
       const mediaId = ref.urlSegmentToInstagramId(postId);
-
+      const participantsSet = new Set<string>();
       let hasNextPage = true;
       let nextMinId = null;
       const apikey = this.config.get<string>('RAPID_API_KEY');
@@ -49,24 +49,8 @@ export class ParticipantsCollectorService {
           const nicknames = data.comments.map(
             (item) => item.user.username,
           ) as string[];
-          const unified = Array.from(new Set(nicknames));
 
-          const participants = unified.map((name) => ({
-            name,
-            giveawayId: eventData.giveawayId,
-          }));
-
-          await this.prismaService.giveaway.update({
-            where: { id: eventData.giveawayId },
-            data: {
-              participants: {
-                create: participants,
-              },
-              participantsCount: {
-                increment: participants.length,
-              },
-            },
-          });
+          for (const nickname of nicknames) participantsSet.add(nickname);
 
           nextMinId = data.next_min_id;
           hasNextPage = nextMinId ?? false;
@@ -74,6 +58,26 @@ export class ParticipantsCollectorService {
           console.error('Fetch exception: ', error.message);
           break;
         }
+      }
+      try {
+        const participants = [...participantsSet.values()].map((name) => ({
+          name,
+          giveawayId: eventData.giveawayId,
+        }));
+
+        await this.prismaService.giveaway.update({
+          where: { id: eventData.giveawayId },
+          data: {
+            participants: {
+              create: participants,
+            },
+            participantsCount: {
+              increment: participants.length,
+            },
+          },
+        });
+      } catch (error) {
+        console.error(error.message);
       }
     }
   }
