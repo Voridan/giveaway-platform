@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   JoinTable,
   ManyToMany,
@@ -14,6 +15,8 @@ import {
 import { AbstractEntity } from './abstract.entity';
 
 @Entity()
+@Index('IDX_OWNER_ID', ['ownerId'])
+@Index('IDX_GIVEAWAY_ID', ['id'])
 export class Giveaway extends AbstractEntity<Giveaway> {
   @Column()
   title: string;
@@ -39,11 +42,11 @@ export class Giveaway extends AbstractEntity<Giveaway> {
   @Column({ default: 0 })
   participantsCount: number;
 
-  @Column()
-  ownerId: number;
-
   @Column({ type: 'tsvector', select: false, nullable: true })
   document: string;
+
+  @Column()
+  ownerId: number;
 
   @ManyToOne(() => User, (user) => user.ownGiveaways)
   owner: User;
