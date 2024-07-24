@@ -38,3 +38,4 @@ export class UserDocument extends AbstractDocument {
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserDocument);
+UserSchema.index({ userName: 1, email: 1 }, { unique: true });
