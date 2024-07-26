@@ -12,7 +12,7 @@ import {
   OneToMany,
   OneToOne,
 } from 'typeorm';
-import { AbstractEntity } from './abstract.entity';
+import { AbstractEntity } from './abstract-entity';
 
 @Entity()
 @Index('IDX_OWNER_ID', ['ownerId'])

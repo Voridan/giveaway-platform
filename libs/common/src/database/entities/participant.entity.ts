@@ -7,7 +7,7 @@ import {
   PrimaryColumn,
 } from 'typeorm';
 import { Giveaway } from './giveaway.entity';
-import { AbstractEntity } from './abstract.entity';
+import { AbstractEntity } from './abstract-entity';
 
 @Entity()
 @Index('IDX_GIVEAWAY_ID_PARTICIPANT', ['giveaway'])

@@ -17,7 +17,13 @@
     "test:watch": "cross-env NODE_ENV=test jest --watch --maxWorkers=1",
     "test:cov": "cross-env NODE_ENV=test jest --coverage",
     "test:debug": "cross-env NODE_ENV=test node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "cross-env NODE_ENV=test jest --testRegex .e2e-spec.ts$"
+    "test:e2e": "cross-env NODE_ENV=test jest --testRegex .e2e-spec.ts$",
+    "typeorm": "ts-node --require tsconfig-paths/register ./node_modules/typeorm/cli",
+    "migration:run": "npm run typeorm migration:run -- -d ./db/typeorm.config.ts",
+    "migration:generate": "npm run typeorm -- -d ./db/typeorm.config.ts migration:generate ./db/migrations/%npm_config_name%",
+    "migration:create": "npm run typeorm -- migration:create ./db/migrations/$npm_config_name",
+    "migration:revert": "npm run typeorm -- -d ./db/typeorm.config.ts migration:revert",
+    "migration:show": "npm run typeorm -- migration:show -d ./db/typeorm.config.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

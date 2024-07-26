@@ -7,7 +7,7 @@ import {
   ManyToMany,
   OneToMany,
 } from 'typeorm';
-import { AbstractEntity } from './abstract.entity';
+import { AbstractEntity } from './abstract-entity';
 
 @Entity({ name: 'user' })
 export class User extends AbstractEntity<User> {

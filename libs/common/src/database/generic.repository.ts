@@ -1,5 +1,5 @@
 import { Logger, NotFoundException } from '@nestjs/common';
-import { AbstractEntity } from './entities/abstract.entity';
+import { AbstractEntity } from './entities/abstract-entity';
 import {
   EntityManager,
   FindOptionsRelations,
