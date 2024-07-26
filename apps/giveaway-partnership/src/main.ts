@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ImATeapotException, ValidationPipe } from '@nestjs/common';
-import * as cookieParser from 'cookie-parser';
+import { ImATeapotException } from '@nestjs/common';
 
 const whitelist = ['http://localhost:5173'];
 
@@ -23,8 +22,6 @@ async function bootstrap() {
       }
     },
   });
-  app.use(cookieParser());
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   await app.listen(5000);
 }
 bootstrap();
