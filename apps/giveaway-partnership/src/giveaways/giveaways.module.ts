@@ -6,6 +6,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
 import { DatabaseModule, Giveaway, Participant } from '@app/common';
+import { ParticipantsTypeOrmRepository } from '../repository/participants.typeorm-repository';
 
 @Module({
   imports: [
@@ -20,6 +21,10 @@ import { DatabaseModule, Giveaway, Participant } from '@app/common';
     ]),
   ],
   controllers: [GiveawaysController],
-  providers: [GiveawaysService, GiveawayTypeOrmRepository],
+  providers: [
+    GiveawaysService,
+    GiveawayTypeOrmRepository,
+    ParticipantsTypeOrmRepository,
+  ],
 })
 export class GiveawaysModule {}

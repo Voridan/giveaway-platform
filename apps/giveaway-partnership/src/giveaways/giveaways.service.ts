@@ -19,11 +19,13 @@ import { FindOptionsRelations } from 'typeorm';
 import { MailService } from '../mail/mail.service';
 import { ConfigService } from '@nestjs/config';
 import { getDeclineMail } from './util/get-decline-mail';
+import { ParticipantsTypeOrmRepository } from '../repository/participants.typeorm-repository';
 
 @Injectable()
 export class GiveawaysService implements OnModuleInit {
   constructor(
     private readonly giveawayRepo: GiveawayTypeOrmRepository,
+    private readonly participantRepo: ParticipantsTypeOrmRepository,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly config: ConfigService,
@@ -161,7 +163,11 @@ export class GiveawaysService implements OnModuleInit {
   }
 
   async end(id: number) {
-    return this.giveawayRepo.findOneAndUpdate({ id }, { ended: true });
+    return this.giveawayRepo.findOneAndUpdate(
+      { id },
+      { ended: true },
+      { partners: true },
+    );
   }
 
   async remove(id: number) {
@@ -173,13 +179,16 @@ export class GiveawaysService implements OnModuleInit {
       { id },
       {
         participants: true,
-        winner: true,
       },
     );
 
+    const winner = await this.participantRepo.findOne({
+      id: giveaway.winnerId,
+    });
+
     const results = new GiveawayResultDto();
     results.participants = giveaway.participants?.map((p) => p.nickname);
-    results.winner = giveaway.winner?.nickname || '';
+    results.winner = winner?.nickname || '';
 
     return results;
   }

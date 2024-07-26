@@ -5,12 +5,10 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  JoinColumn,
   JoinTable,
   ManyToMany,
   ManyToOne,
   OneToMany,
-  OneToOne,
 } from 'typeorm';
 import { AbstractEntity } from './abstract-entity';
 
@@ -47,12 +45,11 @@ export class Giveaway extends AbstractEntity<Giveaway> {
   @Column()
   ownerId: number;
 
+  @Column({ nullable: true })
+  winnerId: number;
+
   @ManyToOne(() => User, (user) => user.ownGiveaways)
   owner: User;
-
-  @OneToOne(() => Participant, { nullable: true })
-  @JoinColumn()
-  winner: Participant;
 
   @ManyToMany(() => User)
   @JoinTable({
