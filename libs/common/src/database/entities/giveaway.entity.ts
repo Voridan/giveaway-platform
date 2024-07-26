@@ -54,7 +54,7 @@ export class Giveaway extends AbstractEntity<Giveaway> {
   @JoinColumn()
   winner: Participant;
 
-  @ManyToMany(() => User, { cascade: true })
+  @ManyToMany(() => User)
   @JoinTable({
     name: 'giveaway_partners_user',
     joinColumn: {
