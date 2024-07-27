@@ -76,11 +76,14 @@ export class AuthController {
 
   @Get('/refresh')
   @UseGuards(RefreshGuard)
+  @PublicRoute()
   @Serialize(AuthResponseDto)
   async refresh(
     @CurrentUser() userJwt: JwtPayloadWithRt,
     @Res({ passthrough: true }) res: Response,
   ) {
+    console.log(userJwt);
+
     const { user, tokens } = await this.authService.refresh(
       userJwt.sub,
       userJwt.refreshToken,

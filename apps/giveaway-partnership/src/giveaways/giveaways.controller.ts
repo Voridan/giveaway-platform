@@ -19,7 +19,7 @@ import { Serialize } from '../interceptors/serialize.interceptor';
 import { GiveawayDto } from './dto/giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
 import { AddParticipantsDto } from './dto/add-participants.dto';
-import { CurrentUser, PublicRoute } from '../decorators';
+import { CurrentUser } from '../decorators';
 import { AdminGuard } from '../guards/jwt-admin.guard';
 import { GiveawayBaseDto } from './dto/giveaway-base.dto';
 import { GiveawayResultDto } from './dto/giveaway-result.dto';
@@ -54,7 +54,6 @@ export class GiveawaysController {
 
   @Get()
   @UseGuards(AdminGuard)
-  @PublicRoute()
   @Serialize(GiveawayBaseDto)
   async getPaginatediveaways(
     @Query('limit', ParseIntPipe) limit: number,

@@ -94,7 +94,7 @@ export class GiveawaysService {
   async update(_id: string, body: UpdateGiveawayDto) {
     const toUpdate = await this.giveawayRepo.findOne({ _id });
     const { title, description, participants, partnersIds, postUrl } = body;
-    const idsArray = partnersIds ? partnersIds.trim().split(' ') : null;
+    const idsSet = partnersIds ? new Set(partnersIds.trim().split(' ')) : null;
 
     const updateQuery: UpdateQuery<GiveawayDocument> = {
       title,
@@ -102,21 +102,29 @@ export class GiveawaysService {
       postUrl,
     };
 
-    const oldPartnersIds = toUpdate.partners.map((partner) => partner.userId);
-    const difference = new Set(oldPartnersIds);
-    if (idsArray) {
-      for (const pId of idsArray) {
-        difference.delete(pId);
+    const oldPartnersIds = toUpdate.partners.map((partner) =>
+      partner.userId.toString(),
+    );
+    const difference: string[] = [];
+
+    if (idsSet) {
+      for (const pId of oldPartnersIds) {
+        if (!idsSet.has(pId)) {
+          difference.push(pId);
+        }
       }
     }
-    await this.usersRepo.updateMany(
-      { _id: { $in: [...difference] } },
-      { $pull: { partneredGiveaways: toUpdate._id } },
-    );
 
-    if (idsArray) {
+    if (difference.length > 0) {
+      await this.usersRepo.updateMany(
+        { _id: { $in: difference } },
+        { $pull: { partneredGiveaways: toUpdate._id } },
+      );
+    }
+
+    if (idsSet) {
       const newPartnerDocuments = await this.usersRepo.find({
-        _id: { $in: idsArray },
+        _id: { $in: [...idsSet.values()] },
       });
 
       const partnerSubDocuments = newPartnerDocuments?.map(
@@ -132,11 +140,9 @@ export class GiveawaysService {
     }
 
     const participantsArr = [
-      ...new Set([
-        ...participants?.trim().split(' '),
-        ...toUpdate.participants,
-      ]),
+      ...new Set([...(participants?.trim().split(' ') || [])]),
     ];
+
     updateQuery.$inc = { participantsCount: participantsArr.length };
     updateQuery.$push = { participants: { $each: participantsArr } };
 
