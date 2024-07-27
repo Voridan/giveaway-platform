@@ -94,7 +94,9 @@ export class GiveawaysService {
   async update(_id: string, body: UpdateGiveawayDto) {
     const toUpdate = await this.giveawayRepo.findOne({ _id });
     const { title, description, participants, partnersIds, postUrl } = body;
-    const idsSet = partnersIds ? new Set(partnersIds.trim().split(' ')) : null;
+    const idsSet = partnersIds
+      ? new Set(partnersIds.trim().split(' '))
+      : new Set([]);
 
     const updateQuery: UpdateQuery<GiveawayDocument> = {
       title,
@@ -109,11 +111,14 @@ export class GiveawaysService {
 
     if (idsSet) {
       for (const pId of oldPartnersIds) {
+        console.log(`!${idsSet}.has(${pId})`, !idsSet.has(pId));
+
         if (!idsSet.has(pId)) {
           difference.push(pId);
         }
       }
     }
+    console.log(difference);
 
     if (difference.length > 0) {
       await this.usersRepo.updateMany(
@@ -123,10 +128,10 @@ export class GiveawaysService {
     }
 
     if (idsSet) {
+      const updatedPartnersId = [...idsSet.values()];
       const newPartnerDocuments = await this.usersRepo.find({
-        _id: { $in: [...idsSet.values()] },
+        _id: { $in: updatedPartnersId },
       });
-
       const partnerSubDocuments = newPartnerDocuments?.map(
         (userDoc) =>
           new this.userSubdocumentModel({
@@ -136,7 +141,13 @@ export class GiveawaysService {
           }),
       );
 
-      updateQuery.partners = partnerSubDocuments;
+      updateQuery.$set = { partners: partnerSubDocuments };
+      await this.usersRepo.updateMany(
+        {
+          _id: { $in: updatedPartnersId },
+        },
+        { $push: { partneredGiveaways: toUpdate._id } },
+      );
     }
 
     const participantsArr = [
@@ -270,7 +281,7 @@ export class GiveawaysService {
   }
 
   searchGiveaways(query: string) {
-    return this.giveawayRepo.searchGiveaways(query);
+    return this.giveawayRepo.searchGiveawaysAtlas(query);
   }
 
   async getUnmoderatedGiveaways(limit: number, lastItemId: string) {
