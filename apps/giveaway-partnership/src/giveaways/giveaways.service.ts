@@ -111,14 +111,11 @@ export class GiveawaysService {
 
     if (idsSet) {
       for (const pId of oldPartnersIds) {
-        console.log(`!${idsSet}.has(${pId})`, !idsSet.has(pId));
-
         if (!idsSet.has(pId)) {
           difference.push(pId);
         }
       }
     }
-    console.log(difference);
 
     if (difference.length > 0) {
       await this.usersRepo.updateMany(
@@ -127,7 +124,11 @@ export class GiveawaysService {
       );
     }
 
-    if (idsSet) {
+    const mustUpdatePartners =
+      idsSet.size !== 0 &&
+      (difference.length > 0 || oldPartnersIds.length === 0);
+
+    if (mustUpdatePartners) {
       const updatedPartnersId = [...idsSet.values()];
       const newPartnerDocuments = await this.usersRepo.find({
         _id: { $in: updatedPartnersId },
@@ -183,7 +184,7 @@ export class GiveawaysService {
     const toDelete = await this.giveawayRepo.findOne({ _id });
     if (!toDelete) throw new NotFoundException('Giveaway not found');
 
-    await this.giveawayRepo.deleteOne(toDelete._id);
+    await this.remove(toDelete._id.toString());
     const owner = toDelete.owner;
 
     const mail = getDeclineMail(owner.email, toDelete.title);
