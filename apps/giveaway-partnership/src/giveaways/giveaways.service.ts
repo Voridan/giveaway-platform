@@ -185,9 +185,6 @@ export class GiveawaysService implements OnModuleInit {
         }
       }
     }
-    // const mustUpdatePartners =
-    //   partnersIdsSet.size !== 0 &&
-    //   (difference.length > 0 || oldPartnersIds.length === 0);
 
     return this.prismaService.giveaway.update({
       where: { id },
@@ -324,13 +321,13 @@ export class GiveawaysService implements OnModuleInit {
     partnerId: number,
     offset: number,
     limit: number,
+    lastItemId: number,
+    forward: boolean = true,
   ) {
     const [giveaways, totalCount] = await this.prismaService.$transaction([
       this.prismaService.giveaway.findMany({
-        orderBy: {
-          id: 'asc',
-        },
         where: {
+          id: forward ? { gt: lastItemId } : { lt: lastItemId },
           partners: {
             some: {
               id: partnerId,
@@ -339,6 +336,9 @@ export class GiveawaysService implements OnModuleInit {
         },
         skip: offset,
         take: limit,
+        orderBy: {
+          id: 'asc',
+        },
       }),
       this.prismaService.giveaway.count({
         where: {
@@ -358,10 +358,13 @@ export class GiveawaysService implements OnModuleInit {
     userId: number,
     offset: number,
     limit: number,
+    lastItemId: number,
+    forward: boolean = true,
   ) {
     const [giveaways, totalCount] = await this.prismaService.$transaction([
       this.prismaService.giveaway.findMany({
         where: {
+          id: forward ? { gt: lastItemId } : { lt: lastItemId },
           ownerId: userId,
         },
         skip: offset,
