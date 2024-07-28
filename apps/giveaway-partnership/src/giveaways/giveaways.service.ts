@@ -176,7 +176,18 @@ export class GiveawaysService implements OnModuleInit {
         )
       : new Set([]);
     const oldPartnersIds = toUpdate.partners.map((partner) => partner.id);
-    const difference: string[] = [];
+    const difference: number[] = [];
+
+    if (partnersIdsSet) {
+      for (const pId of oldPartnersIds) {
+        if (!partnersIdsSet.has(pId)) {
+          difference.push(pId);
+        }
+      }
+    }
+    // const mustUpdatePartners =
+    //   partnersIdsSet.size !== 0 &&
+    //   (difference.length > 0 || oldPartnersIds.length === 0);
 
     return this.prismaService.giveaway.update({
       where: { id },
@@ -191,7 +202,8 @@ export class GiveawaysService implements OnModuleInit {
           create: participantsArr,
         },
         partners: {
-          connect: partnersIdsArr,
+          connect: [...partnersIdsSet.values()].map((id) => ({ id })),
+          disconnect: difference.map((id) => ({ id })),
         },
       },
       include: {

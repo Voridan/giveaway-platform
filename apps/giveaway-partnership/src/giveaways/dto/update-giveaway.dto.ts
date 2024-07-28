@@ -15,7 +15,7 @@ export class UpdateGiveawayDto {
 
   @IsString()
   @IsOptional()
-  @Matches(/^[\w]+( [\w]+)*$/, {
+  @Matches(/^[\w]+( [\w]+)*$|^$/, {
     message: `Participants must be space-separated nicknames`,
   })
   participants?: string;
@@ -23,13 +23,13 @@ export class UpdateGiveawayDto {
   @IsString()
   @IsOptional()
   @Matches(/^https?:\/\/(?:www\.)?instagram\.com\/p\/([a-zA-Z0-9_-]+)\/?$/, {
-    message: `Participants must be space-separated nicknames`,
+    message: `invalid instagram post url`,
   })
   postUrl?: string;
 
   @IsString()
   @IsOptional()
-  @Matches(/^[\d]+( \d+)*$/, {
+  @Matches(/^[\d]+( \d+)*$|^$/, {
     message: "partners' ids must be a string of numbers separeted by a space",
   })
   partnersIds?: string;
