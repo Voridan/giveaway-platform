@@ -41,50 +41,76 @@ export class GiveawayTypeOrmRepository extends GenericTypeOrmRepository<Giveaway
     offset: number,
     limit: number,
     lastItemId: number,
-    forward: boolean = true,
+    forward: boolean,
   ) {
-    const qb = this.entityRepository
-      .createQueryBuilder('giveaway')
-      .innerJoinAndSelect(
-        'giveaway_partners_user',
-        'gpu',
-        'gpu.userId = :partnerId',
-        { partnerId },
-      )
-      .where('gpu.giveawayId = giveaway.id');
+    return this.entityManager.transaction(
+      async (transactionalEntityManager) => {
+        const qbGiveaways = transactionalEntityManager.createQueryBuilder(
+          Giveaway,
+          'giveaway',
+        );
+        const total = await qbGiveaways
+          .innerJoinAndSelect(
+            'giveaway_partners_user',
+            'gpu',
+            'gpu.userId = :partnerId',
+            { partnerId },
+          )
+          .where('gpu.giveawayId = giveaway.id')
+          .getCount();
+        if (lastItemId) {
+          if (forward) {
+            qbGiveaways.andWhere('giveaway.id > :lastItemId', { lastItemId });
+          } else {
+            qbGiveaways.andWhere('giveaway.id < :lastItemId', { lastItemId });
+          }
+        }
+        const pageGiveaways = await qbGiveaways
+          .orderBy('giveaway.id', forward ? 'ASC' : 'DESC')
+          .skip(offset)
+          .take(limit)
+          .getMany();
 
-    if (lastItemId) {
-      if (forward) {
-        qb.andWhere('giveaway.id > :lastItemId', { lastItemId });
-      } else {
-        qb.andWhere('giveaway.id < :lastItemId', { lastItemId });
-      }
-    }
-    qb.orderBy('giveaway.id', forward ? 'ASC' : 'DESC');
-    qb.skip(offset);
-    qb.take(limit);
-    return qb.getManyAndCount();
+        !forward && pageGiveaways.sort((g1, g2) => g1.id - g2.id);
+        return [pageGiveaways, total] as const;
+      },
+    );
   }
 
-  getOwnGiveaways(
+  async getOwnGiveaways(
     ownerId: number,
     offset: number,
     limit: number,
     lastItemId: number,
-    forward: boolean = true,
+    forward: boolean,
   ) {
-    const qb = this.entityRepository.createQueryBuilder('giveaway');
-    qb.where('giveaway.ownerId = :ownerId', { ownerId });
-    if (lastItemId) {
-      if (forward) {
-        qb.andWhere('giveaway.id > :lastItemId', { lastItemId });
-      } else {
-        qb.andWhere('giveaway.id < :lastItemId', { lastItemId });
-      }
-    }
-    qb.orderBy('giveaway.id', forward ? 'ASC' : 'DESC');
-    qb.skip(offset);
-    qb.take(limit);
-    return qb.getManyAndCount();
+    return this.entityManager.transaction(
+      async (transactionalEntityManager) => {
+        const qbGiveaways = transactionalEntityManager.createQueryBuilder(
+          Giveaway,
+          'giveaway',
+        );
+
+        const total = await qbGiveaways
+          .where('giveaway.ownerId = :ownerId', { ownerId })
+          .getCount();
+
+        if (lastItemId) {
+          if (forward) {
+            qbGiveaways.andWhere('giveaway.id > :lastItemId', { lastItemId });
+          } else {
+            qbGiveaways.andWhere('giveaway.id < :lastItemId', { lastItemId });
+          }
+        }
+        const pageGiveaways = await qbGiveaways
+          .orderBy('giveaway.id', forward ? 'ASC' : 'DESC')
+          .skip(offset)
+          .take(limit)
+          .getMany();
+
+        !forward && pageGiveaways.sort((g1, g2) => g1.id - g2.id);
+        return [pageGiveaways, total] as const;
+      },
+    );
   }
 }

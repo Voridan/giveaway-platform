@@ -246,16 +246,32 @@ export class GiveawaysService implements OnModuleInit {
     partnerId: number,
     offset: number,
     limit: number,
+    lastItemId: number,
+    forward: boolean = true,
   ) {
-    return this.giveawayRepo.getPartneredGiveaways(partnerId, offset, limit);
+    return this.giveawayRepo.getPartneredGiveaways(
+      partnerId,
+      offset,
+      limit,
+      lastItemId,
+      forward,
+    );
   }
 
   async getOwnPaginatedGiveaways(
     userId: number,
     offset: number,
     limit: number,
+    lastItemId: number,
+    forward: boolean = true,
   ) {
-    return this.giveawayRepo.getOwnGiveaways(userId, offset, limit);
+    return this.giveawayRepo.getOwnGiveaways(
+      userId,
+      offset,
+      limit,
+      lastItemId,
+      forward,
+    );
   }
 
   mapParticipantsToEntity(participantsStr: string) {
