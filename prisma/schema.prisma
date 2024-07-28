@@ -56,8 +56,8 @@ model Participant {
 model Winner {
   giveawayId    Int         @unique
   participantId Int         @unique
-  giveaway      Giveaway    @relation(fields: [giveawayId], references: [id])
-  participant   Participant @relation(fields: [participantId], references: [id])
+  giveaway      Giveaway    @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
   @@id([giveawayId, participantId])
 }

@@ -153,6 +153,12 @@ export class GiveawaysService implements OnModuleInit {
   }
 
   async update(id: number, body: UpdateGiveawayDto) {
+    const toUpdate = await this.prismaService.giveaway.findUnique({
+      where: { id },
+      include: {
+        partners: true,
+      },
+    });
     const { title, description, postUrl, participants, partnersIds } = body;
     const participantsArr = participants?.length
       ? participants
@@ -161,12 +167,16 @@ export class GiveawaysService implements OnModuleInit {
           .map((name) => ({ name }))
       : [];
 
-    const partnersIdsArr = partnersIds?.length
-      ? partnersIds
-          .trim()
-          .split(' ')
-          .map((id) => ({ id: +id }))
-      : [];
+    const partnersIdsSet = partnersIds?.length
+      ? new Set(
+          partnersIds
+            .trim()
+            .split(' ')
+            .map((strId) => +strId),
+        )
+      : new Set([]);
+    const oldPartnersIds = toUpdate.partners.map((partner) => partner.id);
+    const difference: string[] = [];
 
     return this.prismaService.giveaway.update({
       where: { id },
