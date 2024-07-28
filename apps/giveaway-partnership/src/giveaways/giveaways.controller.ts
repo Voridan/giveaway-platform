@@ -6,6 +6,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  ParseBoolPipe,
   ParseIntPipe,
   Patch,
   Post,
@@ -95,6 +96,10 @@ export class GiveawaysController {
     @Query('offset', ParseIntPipe) offset: number,
     @Query('limit', ParseIntPipe) limit: number,
     @Res({ passthrough: true }) response: Response,
+    @Query('lastItemId', new ParseIntPipe({ optional: true }))
+    lastItemId: number,
+    @Query('forward', new ParseBoolPipe({ optional: true }))
+    forward: boolean = true,
   ) {
     try {
       const [giveaways, total] =
@@ -102,6 +107,8 @@ export class GiveawaysController {
           id,
           offset,
           limit,
+          lastItemId,
+          forward,
         );
 
       response.setHeader('giveaways-total-count', total);
@@ -117,11 +124,21 @@ export class GiveawaysController {
     @Param('userId', ParseIntPipe) id: number,
     @Query('offset', ParseIntPipe) offset: number,
     @Query('limit', ParseIntPipe) limit: number,
+    @Query('lastItemId', new ParseIntPipe({ optional: true }))
+    lastItemId: number,
+    @Query('forward', new ParseBoolPipe({ optional: true }))
+    forward: boolean = true,
     @Res({ passthrough: true }) response: Response,
   ) {
     try {
       const [giveaways, total] =
-        await this.giveawaysService.getOwnPaginatedGiveaways(id, offset, limit);
+        await this.giveawaysService.getOwnPaginatedGiveaways(
+          id,
+          offset,
+          limit,
+          lastItemId,
+          forward,
+        );
 
       response.setHeader('giveaways-total-count', total);
       return giveaways;
