@@ -43,3 +43,4 @@ export class GiveawayDocument extends AbstractDocument {
 
 export const GiveawaySchema = SchemaFactory.createForClass(GiveawayDocument);
 GiveawaySchema.index({ title: 'text', description: 'text' });
+GiveawaySchema.index({ owner: 1 });

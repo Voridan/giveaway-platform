@@ -5,10 +5,10 @@ import { GiveawayDocument } from './giveaway.document';
 
 @Schema({ versionKey: false, timestamps: { createdAt: true } })
 export class UserDocument extends AbstractDocument {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   userName: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   email: string;
 
   @Prop({ required: true })
