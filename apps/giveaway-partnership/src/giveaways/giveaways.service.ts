@@ -124,10 +124,7 @@ export class GiveawaysService {
       );
     }
 
-    const mustUpdatePartners =
-      idsSet.size !== 0 &&
-      (difference.length > 0 || oldPartnersIds.length === 0);
-
+    const mustUpdatePartners = idsSet.size !== 0 || oldPartnersIds.length === 0;
     if (mustUpdatePartners) {
       const updatedPartnersId = [...idsSet.values()];
       const newPartnerDocuments = await this.usersRepo.find({
@@ -297,17 +294,33 @@ export class GiveawaysService {
     partnerId: string,
     offset: number,
     limit: number,
+    lastItemId: string,
+    forward: boolean,
   ) {
-    return this.usersRepo.getPartneredGiveaways(partnerId, offset, limit);
+    return this.usersRepo.getPartneredGiveaways(
+      partnerId,
+      offset,
+      limit,
+      lastItemId,
+      forward,
+    );
   }
 
   async getOwnPaginatedGiveaways(
     userId: string,
     offset: number,
     limit: number,
+    lastItemId: string,
+    forward: boolean,
   ) {
     try {
-      return this.usersRepo.getOwnGiveaways(userId, offset, limit);
+      return this.usersRepo.getOwnGiveaways(
+        userId,
+        offset,
+        limit,
+        lastItemId,
+        forward,
+      );
     } catch (error) {
       throw new BadRequestException(error.message);
     }

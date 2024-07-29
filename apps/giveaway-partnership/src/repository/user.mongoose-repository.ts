@@ -1,7 +1,11 @@
-import { GenericMongooseRepository, UserDocument } from '@app/common';
+import {
+  GenericMongooseRepository,
+  GiveawayDocument,
+  UserDocument,
+} from '@app/common';
 import { Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, PipelineStage, Types } from 'mongoose';
 
 export class UserMongooseRepository extends GenericMongooseRepository<UserDocument> {
   protected readonly logger = new Logger(UserMongooseRepository.name);
@@ -10,7 +14,28 @@ export class UserMongooseRepository extends GenericMongooseRepository<UserDocume
     super(userModel);
   }
 
-  async getOwnGiveaways(userId: string, offset: number, limit: number) {
+  async getOwnGiveaways(
+    userId: string,
+    offset: number,
+    limit: number,
+    lastItemId: string | undefined,
+    forward: boolean,
+  ) {
+    const paginatedGiveawaysStages: PipelineStage[] = [
+      { $unwind: '$ownGiveawaysDetails' },
+    ];
+    if (lastItemId) {
+      paginatedGiveawaysStages.push({
+        $match: {
+          'ownGiveawaysDetails._id': forward
+            ? { $gt: new Types.ObjectId(lastItemId) }
+            : { $lt: new Types.ObjectId(lastItemId) },
+        },
+      });
+    }
+    paginatedGiveawaysStages.push({
+      $sort: { 'ownGiveawaysDetails._id': forward ? 1 : -1 },
+    });
     const [result] = await this.model.aggregate([
       { $match: { _id: new Types.ObjectId(userId) } },
       {
@@ -30,8 +55,7 @@ export class UserMongooseRepository extends GenericMongooseRepository<UserDocume
       {
         $facet: {
           paginatedGiveaways: [
-            { $unwind: '$ownGiveawaysDetails' },
-            { $sort: { 'ownGiveawaysDetails._id': 1 } },
+            ...paginatedGiveawaysStages,
             { $skip: offset },
             { $limit: limit },
             {
@@ -54,14 +78,14 @@ export class UserMongooseRepository extends GenericMongooseRepository<UserDocume
         },
       },
     ]);
-
     const giveaways =
       result.paginatedGiveaways.length > 0
-        ? result.paginatedGiveaways[0].giveaways
+        ? (result.paginatedGiveaways[0].giveaways as GiveawayDocument[])
         : [];
     const totalCount =
       result.totalCount.length > 0 ? result.totalCount[0].count : 0;
 
+    !forward && giveaways.reverse();
     return [giveaways, totalCount];
   }
 
@@ -69,7 +93,24 @@ export class UserMongooseRepository extends GenericMongooseRepository<UserDocume
     partnerId: string,
     offset: number,
     limit: number,
+    lastItemId: string,
+    forward: boolean,
   ) {
+    const paginatedGiveawaysStages: PipelineStage[] = [
+      { $unwind: '$partneredGiveawayDetails' },
+    ];
+    if (lastItemId) {
+      paginatedGiveawaysStages.push({
+        $match: {
+          'partneredGiveawayDetails._id': forward
+            ? { $gt: new Types.ObjectId(lastItemId) }
+            : { $lt: new Types.ObjectId(lastItemId) },
+        },
+      });
+    }
+    paginatedGiveawaysStages.push({
+      $sort: { 'partneredGiveawayDetails._id': forward ? 1 : -1 },
+    });
     const [result] = await this.model.aggregate([
       { $match: { _id: new Types.ObjectId(partnerId) } },
       {
@@ -89,8 +130,7 @@ export class UserMongooseRepository extends GenericMongooseRepository<UserDocume
       {
         $facet: {
           giveaways: [
-            { $unwind: '$partneredGiveawayDetails' },
-            { $sort: { 'partneredGiveawayDetails._id': 1 } },
+            ...paginatedGiveawaysStages,
             { $skip: offset },
             { $limit: limit },
             {
@@ -119,6 +159,7 @@ export class UserMongooseRepository extends GenericMongooseRepository<UserDocume
     const totalCount =
       result.totalCount.length > 0 ? result.totalCount[0].count : 0;
 
+    !forward && giveaways.reverse();
     return [giveaways, totalCount];
   }
 }

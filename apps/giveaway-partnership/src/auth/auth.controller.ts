@@ -82,8 +82,6 @@ export class AuthController {
     @CurrentUser() userJwt: JwtPayloadWithRt,
     @Res({ passthrough: true }) res: Response,
   ) {
-    console.log(userJwt);
-
     const { user, tokens } = await this.authService.refresh(
       userJwt.sub,
       userJwt.refreshToken,
