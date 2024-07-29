@@ -351,7 +351,7 @@ export class GiveawaysService implements OnModuleInit {
       }),
     ]);
 
-    !forward && giveaways.sort((g1, g2) => g1.id - g2.id);
+    !forward && giveaways.reverse();
     return [giveaways, totalCount] as const;
   }
 
@@ -381,7 +381,7 @@ export class GiveawaysService implements OnModuleInit {
       }),
     ]);
 
-    !forward && giveaways.sort((g1, g2) => g1.id - g2.id);
+    !forward && giveaways.reverse();
     return [giveaways, totalCount] as const;
   }
 }
