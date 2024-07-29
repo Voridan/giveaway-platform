@@ -71,7 +71,7 @@ export class GiveawayTypeOrmRepository extends GenericTypeOrmRepository<Giveaway
           .take(limit)
           .getMany();
 
-        !forward && pageGiveaways.sort((g1, g2) => g1.id - g2.id);
+        !forward && pageGiveaways.reverse();
         return [pageGiveaways, total] as const;
       },
     );
@@ -108,7 +108,7 @@ export class GiveawayTypeOrmRepository extends GenericTypeOrmRepository<Giveaway
           .take(limit)
           .getMany();
 
-        !forward && pageGiveaways.sort((g1, g2) => g1.id - g2.id);
+        !forward && pageGiveaways.reverse();
         return [pageGiveaways, total] as const;
       },
     );
