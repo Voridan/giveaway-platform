@@ -337,7 +337,7 @@ export class GiveawaysService implements OnModuleInit {
         skip: offset,
         take: limit,
         orderBy: {
-          id: 'asc',
+          id: forward ? 'asc' : 'desc',
         },
       }),
       this.prismaService.giveaway.count({
@@ -371,7 +371,7 @@ export class GiveawaysService implements OnModuleInit {
         skip: offset,
         take: limit,
         orderBy: {
-          id: 'asc',
+          id: forward ? 'asc' : 'desc',
         },
       }),
       this.prismaService.giveaway.count({
