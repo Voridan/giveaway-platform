@@ -66,8 +66,9 @@ export abstract class GenericTypeOrmRepository<T extends AbstractEntity<T>> {
   async find(
     where: FindOptionsWhere<T>,
     relations?: FindOptionsRelations<T>,
+    select?: FindOptionsSelect<T>,
   ): Promise<T[]> {
-    return this.entityRepository.find({ where, relations });
+    return this.entityRepository.find({ where, relations, select });
   }
 
   async findOneAndDelete(where: FindOptionsWhere<T>) {

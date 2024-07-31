@@ -14,18 +14,19 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { CreateGiveawayDto } from './dto/create-giveaway.dto';
 import { GiveawaysService } from './giveaways.service';
 import { Serialize } from '../interceptors/serialize.interceptor';
 import { GiveawayDto } from './dto/giveaway.dto';
 import { UpdateGiveawayDto } from './dto/update-giveaway.dto';
-import { ParticipantsSourceDto } from './dto/participants-source.dto';
 import { AddParticipantsDto } from './dto/add-participants.dto';
 import { CurrentUser } from '../decorators';
 import { AdminGuard } from '../guards/jwt-admin.guard';
 import { Response } from 'express';
 import { GiveawayBaseDto } from './dto/giveaway-base.dto';
+import { ParticipantsSourceDto } from './dto/participants-source.dto';
 import { GiveawayResultDto } from './dto/giveaway-result.dto';
+import { CreateGiveawayDto } from './dto/create-giveaway.dto';
+import { StatsParticipantsDto } from './dto/stats-participants.dto';
 
 @Controller('giveaways')
 export class GiveawaysController {
@@ -145,6 +146,12 @@ export class GiveawaysController {
     } catch (error) {
       throw new BadRequestException();
     }
+  }
+
+  @Get('/stats-participants/users/:id')
+  @Serialize(StatsParticipantsDto)
+  async getParticipantsStats(@Param('id', ParseIntPipe) ownerId: number) {
+    return this.giveawaysService.getParticipantsStats(ownerId);
   }
 
   @Patch('/moderation/:id/approve')

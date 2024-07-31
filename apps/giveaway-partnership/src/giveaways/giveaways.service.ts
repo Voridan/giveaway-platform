@@ -274,6 +274,14 @@ export class GiveawaysService implements OnModuleInit {
     );
   }
 
+  getParticipantsStats(userId: number) {
+    return this.giveawayRepo.find(
+      { ownerId: userId },
+      {},
+      { title: true, participantsCount: true },
+    );
+  }
+
   mapParticipantsToEntity(participantsStr: string) {
     const participants = participantsStr.trim().split(' ');
     return participants.map((nickname) => new Participant({ nickname }));
