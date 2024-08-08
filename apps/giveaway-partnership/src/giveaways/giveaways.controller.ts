@@ -188,7 +188,10 @@ export class GiveawaysController {
     @CurrentUser('sub') userId: number,
     @Body() participantsSourceDto: ParticipantsSourceDto,
   ) {
-    this.giveawaysService.collectParticipants(participantsSourceDto, userId);
+    return this.giveawaysService.collectParticipants(
+      participantsSourceDto,
+      userId,
+    );
   }
 
   @Post('/add-participants/:id')

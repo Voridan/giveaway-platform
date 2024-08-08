@@ -29,7 +29,7 @@ export class GiveawaysService implements OnModuleInit {
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly config: ConfigService,
-    @Inject('participants-microservice')
+    @Inject('PARTICIPANT_COLLECTOR')
     private readonly participantsClient: ClientProxy,
   ) {}
 
