@@ -187,7 +187,9 @@ export class GiveawaysService implements OnModuleInit {
     });
 
     const results = new GiveawayResultDto();
-    results.participants = giveaway.participants?.map((p) => p.nickname);
+    results.participants = giveaway.participants
+      ?.reduce((resStr, p) => `${resStr} ${p.nickname}`, '')
+      .trim();
     results.winner = winner?.nickname || '';
 
     return results;
@@ -276,7 +278,7 @@ export class GiveawaysService implements OnModuleInit {
 
   getParticipantsStats(userId: number) {
     return this.giveawayRepo.find(
-      { ownerId: userId },
+      { ownerId: userId, onModeration: false },
       {},
       { title: true, participantsCount: true },
     );
