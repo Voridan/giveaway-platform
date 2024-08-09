@@ -173,14 +173,18 @@ export class GiveawaysController {
   updateGiveaway(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateGiveawayDto,
+    @CurrentUser('sub') ownerId: number,
   ) {
-    return this.giveawaysService.update(id, body);
+    return this.giveawaysService.update(id, body, ownerId);
   }
 
   @Delete('/:id')
   @Serialize(GiveawayDto)
-  removeGiveaway(@Param('id', ParseIntPipe) id: number) {
-    return this.giveawaysService.remove(id);
+  removeGiveaway(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser('sub') ownerId: number,
+  ) {
+    return this.giveawaysService.remove(id, ownerId);
   }
 
   @Post('/collect-participants')

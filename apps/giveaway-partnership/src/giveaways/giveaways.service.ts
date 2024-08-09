@@ -20,6 +20,8 @@ import { MailService } from '../mail/mail.service';
 import { ConfigService } from '@nestjs/config';
 import { getDeclineMail } from './util/get-decline-mail';
 import { ParticipantsTypeOrmRepository } from '../repository/participants.typeorm-repository';
+import { Cache } from 'cache-manager';
+import { getGvParticipantsStatsKey, getResultsKey } from '../redis';
 
 @Injectable()
 export class GiveawaysService implements OnModuleInit {
@@ -31,6 +33,7 @@ export class GiveawaysService implements OnModuleInit {
     private readonly config: ConfigService,
     @Inject('PARTICIPANT_COLLECTOR')
     private readonly participantsClient: ClientProxy,
+    @Inject('CACHE_MANAGER') private readonly cacheManager: Cache,
   ) {}
 
   async onModuleInit() {
@@ -73,6 +76,7 @@ export class GiveawaysService implements OnModuleInit {
       savedGv.partners = partners;
     }
 
+    await this.clearStatsCache(userId);
     return participants || partnersIds
       ? this.giveawayRepo.save(savedGv)
       : savedGv;
@@ -101,7 +105,7 @@ export class GiveawaysService implements OnModuleInit {
     const toDelete = await this.giveawayRepo.findOne({ id }, { owner: true });
     if (!toDelete) throw new NotFoundException('Giveaway not found');
 
-    await this.remove(toDelete.id);
+    await this.remove(toDelete.id, toDelete.owner.id);
     const owner = toDelete.owner;
 
     const mail = getDeclineMail(owner.email, toDelete.title);
@@ -124,7 +128,7 @@ export class GiveawaysService implements OnModuleInit {
     return giveaway;
   }
 
-  async update(id: number, body: UpdateGiveawayDto) {
+  async update(id: number, body: UpdateGiveawayDto, ownerId: number) {
     const { title, description, postUrl } = body;
     const { participants, partnersIds } = body;
     const updateObj: Partial<Giveaway> = { title, description, postUrl };
@@ -159,6 +163,7 @@ export class GiveawaysService implements OnModuleInit {
       updated.partners = partners;
     }
 
+    await this.clearStatsCache(ownerId);
     return this.giveawayRepo.save(updated);
   }
 
@@ -170,11 +175,24 @@ export class GiveawaysService implements OnModuleInit {
     );
   }
 
-  async remove(id: number) {
+  async remove(id: number, ownerId: number) {
+    await this.clearStatsCache(ownerId);
     return this.giveawayRepo.findOneAndDelete({ id });
   }
 
   async getResult(id: number) {
+    const res = await this.cacheManager.get<{
+      winner: string;
+      participants: string;
+    }>(getResultsKey(id.toString()));
+
+    if (res) {
+      const results = new GiveawayResultDto();
+      results.participants = res.participants;
+      results.winner = res.winner;
+      return results;
+    }
+
     const giveaway = await this.giveawayRepo.findOne(
       { id },
       {
@@ -187,8 +205,17 @@ export class GiveawaysService implements OnModuleInit {
     });
 
     const results = new GiveawayResultDto();
-    results.participants = giveaway.participants?.map((p) => p.nickname);
+    results.participants = giveaway.participants
+      ?.reduce((resStr, p) => `${resStr} ${p.nickname}`, '')
+      .trim();
     results.winner = winner?.nickname || '';
+
+    const FIFTEEN_MINS = 15 * 60 * 1000;
+    await this.cacheManager.set(
+      getResultsKey(id.toString()),
+      results,
+      FIFTEEN_MINS,
+    );
 
     return results;
   }
@@ -274,12 +301,33 @@ export class GiveawaysService implements OnModuleInit {
     );
   }
 
-  getParticipantsStats(userId: number) {
-    return this.giveawayRepo.find(
-      { ownerId: userId },
+  async getParticipantsStats(userId: number) {
+    let res = await this.cacheManager.get<
+      Array<{
+        title: string;
+        participantsCount: number;
+      }>
+    >(getGvParticipantsStatsKey(userId.toString()));
+
+    if (res) return res;
+
+    res = await this.giveawayRepo.find(
+      { ownerId: userId, onModeration: false },
       {},
       { title: true, participantsCount: true },
     );
+
+    const FIFTEEN_MINS = 15 * 60 * 1000;
+    await this.cacheManager.set(
+      getGvParticipantsStatsKey(userId.toString()),
+      res,
+      FIFTEEN_MINS,
+    );
+    return res;
+  }
+
+  private clearStatsCache(userId: number) {
+    return this.cacheManager.del(getGvParticipantsStatsKey(userId.toString()));
   }
 
   mapParticipantsToEntity(participantsStr: string) {

@@ -11,6 +11,10 @@ import { DatabaseModule } from '@app/common';
 import { APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { AccessGuard } from './guards';
 import * as cookieParser from 'cookie-parser';
+import { redisStore } from 'cache-manager-redis-store';
+import type { RedisClientOptions } from 'redis';
+import { CacheModule, CacheStore } from '@nestjs/cache-manager';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -20,6 +24,17 @@ import * as cookieParser from 'cookie-parser';
     GiveawaysModule,
     AuthModule,
     MailModule,
+    CacheModule.registerAsync<RedisClientOptions>({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        store: (await redisStore({
+          url: configService.get('REDIS_URL'),
+          ttl: 30 * 1000,
+        })) as unknown as CacheStore,
+      }),
+    }),
   ],
   controllers: [AppController],
   providers: [
